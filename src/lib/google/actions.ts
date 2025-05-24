@@ -19,7 +19,11 @@ class GmailService {
 
 	constructor() {
 		this.auth = new GoogleAuth({
-			scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+			scopes: [
+				'https://www.googleapis.com/auth/gmail.readonly',
+				'https://www.googleapis.com/auth/userinfo.email',
+				'https://www.googleapis.com/auth/userinfo.profile'
+			],
 			credentials: {
 				client_id: process.env.GOOGLE_CLIENT_ID,
 				client_secret: process.env.GOOGLE_CLIENT_SECRET,
@@ -50,7 +54,11 @@ class GmailService {
 				: 'http://localhost:3000/api/auth/callback'
 		)
 
-		const scopes = ['https://www.googleapis.com/auth/gmail.readonly']
+		const scopes = [
+			'https://www.googleapis.com/auth/gmail.readonly',
+			'https://www.googleapis.com/auth/userinfo.email',
+			'https://www.googleapis.com/auth/userinfo.profile'
+		]
 
 		return oauth2Client.generateAuthUrl({
 			access_type: 'offline',
