@@ -121,9 +121,6 @@ export default function ConnectedEmailsPage() {
 				setAccessToken(data.accessToken)
 				setSelectedAccount(email)
 				setCurrentUserId(account.userId) // Update current user ID
-				toast.success(`Selected ${email}`, {
-					description: 'You can now fetch emails from this account.',
-				})
 				console.log(`🔑 Loaded credentials for ${email} (userId: ${account.userId})`)
 			} else {
 				console.error('❌ Failed to load credentials:', data.error)
@@ -140,7 +137,6 @@ export default function ConnectedEmailsPage() {
 			// Deselect if already selected
 			setSelectedAccount(null)
 			setAccessToken(null)
-			toast.info(`Deselected ${email}`)
 			console.log(`🔓 Deselected account: ${email}`)
 		} else {
 			// Select the account
