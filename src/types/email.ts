@@ -9,6 +9,13 @@ export interface GmailMessage {
 	labels: string[]
 }
 
+// Enhanced Gmail message with full content for better AI summaries
+export interface GmailMessageWithContent extends GmailMessage {
+	textContent?: string
+	htmlContent?: string
+	bodyPreview: string // Best available content for AI processing
+}
+
 // Summarized message metadata stored in JSON
 export interface SummarizedMessage {
 	id: string
@@ -23,4 +30,11 @@ export interface CleanedMessage {
 	from: string
 	date: string
 	snippet: string
+}
+
+// Enhanced cleaned message for OpenAI with full content
+export interface CleanedMessageWithContent extends CleanedMessage {
+	textContent?: string
+	htmlContent?: string
+	bodyPreview: string
 } 

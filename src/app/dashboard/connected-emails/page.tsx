@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { GmailMessage } from '@/types/email'
+import type { GmailMessage, GmailMessageWithContent } from '@/types/email'
 
 interface EmailData {
 	id: string
@@ -37,6 +37,11 @@ export default function ConnectedEmailsPage() {
 	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
 	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
 	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccount | null>(null)
+	
+	// New state for content fetching
+	const [emailsWithContent, setEmailsWithContent] = useState<GmailMessageWithContent[]>([])
+	const [isFetchingContent, setIsFetchingContent] = useState(false)
+	
 	const searchParams = useSearchParams()
 
 	useEffect(() => {
@@ -137,9 +142,11 @@ export default function ConnectedEmailsPage() {
 			// Deselect if already selected
 			setSelectedAccount(null)
 			setAccessToken(null)
+			setEmailsWithContent([]) // Clear emails when deselecting
 			console.log(`🔓 Deselected account: ${email}`)
 		} else {
 			// Select the account
+			setEmailsWithContent([]) // Clear previous emails
 			loadAccountCredentials(email)
 		}
 	}
@@ -181,6 +188,7 @@ export default function ConnectedEmailsPage() {
 				if (selectedAccount === accountToDisconnect.email) {
 					setSelectedAccount(null)
 					setAccessToken(null)
+					setEmailsWithContent([]) // Clear emails
 				}
 				
 				// Reload accounts to reflect the change
@@ -233,6 +241,52 @@ export default function ConnectedEmailsPage() {
 		} catch (error) {
 			console.error('❌ Error getting auth URL:', error)
 			toast.error('Error starting authentication')
+		}
+	}
+
+	// New function to fetch today's emails with content
+	const handleFetchTodaysEmailsWithContent = async () => {
+		if (!accessToken || !selectedAccount) {
+			toast.error('No account selected', {
+				description: 'Please select an account first.',
+			})
+			return
+		}
+
+		setIsFetchingContent(true)
+		try {
+			console.log('🚀 Fetching today\'s emails with full content...')
+			
+			const response = await fetch('/api/emails/today-with-content', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					accessToken,
+					maxResults: emailCount,
+				}),
+			})
+
+			const data = await response.json()
+			
+			if (data.emails) {
+				setEmailsWithContent(data.emails)
+				toast.success(`Fetched ${data.emails.length} emails with content!`, {
+					description: `${data.stats.withTextContent} with text, ${data.stats.withHtmlContent} with HTML`,
+				})
+				
+				// Log to console for debugging
+				console.log('📧 Emails with content:', data.emails)
+				console.log('📊 Content stats:', data.stats)
+			} else {
+				toast.error('Failed to fetch emails with content')
+			}
+		} catch (error) {
+			console.error('❌ Error fetching emails with content:', error)
+			toast.error('Error fetching emails with content')
+		} finally {
+			setIsFetchingContent(false)
 		}
 	}
 
@@ -374,11 +428,11 @@ export default function ConnectedEmailsPage() {
 				)}
 			</div>
 
-			{/* Email Summarization Section */}
+			{/* Email Actions Section */}
 			{selectedAccount && accessToken && (
 				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
 					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
-						Email Summarization for {selectedAccount}
+						Email Actions for {selectedAccount}
 					</h2>
 					
 					<div className="space-y-4">
@@ -398,15 +452,73 @@ export default function ConnectedEmailsPage() {
 							/>
 						</div>
 
-						{/* AI Summarization Button */}
-						<Button
-							onClick={handleAISummarization}
-							disabled={isAISummarizing}
-							variant="default"
-							className="shadow-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-						>
-							{isAISummarizing ? '🚀 Processing...' : '🚀 Summarize Emails with AI'}
-						</Button>
+						{/* Action Buttons */}
+						<div className="flex flex-wrap gap-3">
+							{/* Fetch Today's Emails with Content Button */}
+							<Button
+								onClick={handleFetchTodaysEmailsWithContent}
+								disabled={isFetchingContent}
+								variant="outline"
+								className="shadow-sm bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white border-0"
+							>
+								{isFetchingContent ? '📥 Fetching...' : '📥 Fetch Today\'s Emails (Full Content)'}
+							</Button>
+
+							{/* AI Summarization Button */}
+							<Button
+								onClick={handleAISummarization}
+								disabled={isAISummarizing}
+								variant="default"
+								className="shadow-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+							>
+								{isAISummarizing ? '🚀 Processing...' : '🚀 Summarize Emails with AI'}
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Fetched Emails Display */}
+			{emailsWithContent.length > 0 && (
+				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
+					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
+						Today's Emails ({emailsWithContent.length} found)
+					</h2>
+					
+					<div className="space-y-4 max-h-96 overflow-y-auto">
+						{emailsWithContent.map((email, index) => (
+							<div key={email.id} className="p-4 border border-border rounded-lg bg-muted/30">
+								<div className="flex justify-between items-start mb-2">
+									<h3 className="font-medium text-foreground truncate">
+										{email.subject || 'No Subject'}
+									</h3>
+									<span className="text-xs text-muted-foreground ml-2">
+										{new Date(email.date).toLocaleTimeString()}
+									</span>
+								</div>
+								
+								<p className="text-sm text-muted-foreground mb-2">
+									From: {email.from || 'Unknown Sender'}
+								</p>
+								
+								<p className="text-sm text-foreground">
+									{email.bodyPreview || email.snippet || 'No content available'}
+								</p>
+								
+								<div className="flex gap-2 mt-2">
+									{email.textContent && (
+										<span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+											Text: {email.textContent.length} chars
+										</span>
+									)}
+									{email.htmlContent && (
+										<span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+											HTML: {email.htmlContent.length} chars
+										</span>
+									)}
+								</div>
+							</div>
+						))}
 					</div>
 				</div>
 			)}
