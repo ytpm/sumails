@@ -1,0 +1,9 @@
+[
+  {
+    "userId": "user_123",
+    "accountEmail": "john@gmail.com",
+    "date": "2025-05-24",
+    "summary": "Today’s emails were mostly from clients and newsletters...",
+    "highlights": ["Invoice from Stripe", "Meeting recap from Jane"]
+  }
+]
