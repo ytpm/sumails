@@ -1,1 +1,48 @@
-[]
+[
+  {
+    "id": "8rosQOkaEuL9IgUPwmWiQ",
+    "date": "2025-05-24",
+    "summary": "The inbox features a mix of security alerts, order confirmations, promotional emails, and updates from various services. There are multiple notifications from WordPress requiring approval, an important Google security alert, and a few promotional emails about upcoming events and discounts. A booking confirmation from Emirates and a Google One trial ending reminder are also notable.",
+    "highlights": [
+      {
+        "subject": "Security alert",
+        "from": "Google <no-reply@accounts.google.com>"
+      },
+      {
+        "subject": "Yossi Tsafar, thank you for your order.",
+        "from": "GoDaddy <donotreply@godaddy.com>"
+      },
+      {
+        "subject": "Your booking is confirmed - I27S8B",
+        "from": "Yossi Tsafar <yositsafar@gmail.com>"
+      },
+      {
+        "subject": "Your trial for Google One will end on 29 May 2025",
+        "from": "Google Play <googleplay-noreply@google.com>"
+      },
+      {
+        "subject": "Regarding your account: Fix potential security issues",
+        "from": "The Google Workspace Team <workspace-noreply@google.com>"
+      }
+    ],
+    "suggestion": "Consider setting up filters to automatically sort promotional emails and duplicate messages to reduce inbox clutter.",
+    "created_at": "2025-05-24T18:41:32.216Z",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io"
+  },
+  {
+    "id": "ntMV8MuxBJggoILGs-1a6",
+    "userId": "104681680828637897674",
+    "accountId": "yositsafar@gmail.com",
+    "date": "2025-05-24",
+    "summary": "Your inbox has recently received a new email notification requesting approval for a comment on a WordPress site. The email is related to a blog post about roof repair services. It appears to be a transactional email that requires your immediate attention.",
+    "highlights": [
+      {
+        "subject": "[ארי קבלנים] צריך לאשר: \"תיקון גגות רעפים בראשון לציון\"",
+        "from": "WordPress"
+      }
+    ],
+    "suggestion": "Consider setting up filters to automatically categorize and prioritize transactional emails, such as comment approvals, to ensure timely responses and keep your inbox organized.",
+    "created_at": "2025-05-24T18:47:52.551Z"
+  }
+]

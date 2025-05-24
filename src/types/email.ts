@@ -12,7 +12,7 @@ export interface GmailMessage {
 // Summarized message metadata stored in JSON
 export interface SummarizedMessage {
 	id: string
-	account_id: string
+	accountId: string
 	summarized_at: string
 }
 

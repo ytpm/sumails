@@ -7,7 +7,7 @@ import type { GmailMessage, SummarizedMessage, CleanedMessage } from '@/types/em
 interface AccountProcessingLog {
 	id: string
 	account_email: string
-	user_id: string
+	userId: string
 	date: string // YYYY-MM-DD
 	last_processed_at: string // ISO timestamp
 	emails_fetched: number
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 		// Step 1: Check if account was already processed today
 		const processingLog = await readJsonFile<AccountProcessingLog>('account_processing_log.json')
 		const todayProcessing = processingLog.find(
-			log => log.account_email === accountEmail && log.user_id === userId && log.date === today
+			log => log.account_email === accountEmail && log.userId === userId && log.date === today
 		)
 
 		if (todayProcessing && todayProcessing.status === 'success') {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 			const logEntry: AccountProcessingLog = {
 				id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
 				account_email: accountEmail,
-				user_id: userId,
+				userId: userId,
 				date: today,
 				last_processed_at: currentTimestamp,
 				emails_fetched: 0,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 			const logEntry: AccountProcessingLog = {
 				id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
 				account_email: accountEmail,
-				user_id: userId,
+				userId: userId,
 				date: today,
 				last_processed_at: currentTimestamp,
 				emails_fetched: emails.length,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
 		// Step 5: Run AI summarization
 		console.log('🤖 Running AI summarization...')
-		const summarizationResult = await summarizeAndStoreEmails()
+		const summarizationResult = await summarizeAndStoreEmails(userId, accountEmail)
 
 		if (!summarizationResult.success) {
 			console.error('❌ AI summarization failed:', summarizationResult.message)
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 			const logEntry: AccountProcessingLog = {
 				id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
 				account_email: accountEmail,
-				user_id: userId,
+				userId: userId,
 				date: today,
 				last_processed_at: currentTimestamp,
 				emails_fetched: emails.length,
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
 		const logEntry: AccountProcessingLog = {
 			id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
 			account_email: accountEmail,
-			user_id: userId,
+			userId: userId,
 			date: today,
 			last_processed_at: currentTimestamp,
 			emails_fetched: emails.length,

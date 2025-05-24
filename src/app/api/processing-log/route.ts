@@ -4,7 +4,7 @@ import { readJsonFile } from '@/lib/json_handler'
 interface AccountProcessingLog {
 	id: string
 	account_email: string
-	user_id: string
+	userId: string
 	date: string
 	last_processed_at: string
 	emails_fetched: number

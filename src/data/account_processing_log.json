@@ -1,1 +1,24 @@
-[] 
+[
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_24",
+    "account_email": "yt@playmania.io",
+    "date": "2025-05-24",
+    "last_processed_at": "2025-05-24T18:41:24.493Z",
+    "emails_fetched": 10,
+    "emails_summarized": 20,
+    "digest_id": "8rosQOkaEuL9IgUPwmWiQ",
+    "status": "success",
+    "userId": "115467879480945091792"
+  },
+  {
+    "id": "104681680828637897674_yositsafar_gmail_com_2025_05_24",
+    "account_email": "yositsafar@gmail.com",
+    "userId": "104681680828637897674",
+    "date": "2025-05-24",
+    "last_processed_at": "2025-05-24T18:47:48.962Z",
+    "emails_fetched": 10,
+    "emails_summarized": 1,
+    "digest_id": "ntMV8MuxBJggoILGs-1a6",
+    "status": "success"
+  }
+]

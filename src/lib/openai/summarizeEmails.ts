@@ -27,14 +27,14 @@ interface UnsummarizedEmail {
 
 interface SummarizedMessage {
 	id: string
-	account_id: string
+	accountId: string
 	summarized_at: string
 }
 
 interface EmailDigest {
 	id: string
-	user_id: string
-	account_id: string
+	userId: string
+	accountId: string
 	date: string
 	summary: string
 	highlights: Array<{
@@ -60,7 +60,7 @@ const openai = new OpenAI({
 /**
  * Summarize and store emails using OpenAI
  */
-export async function summarizeAndStoreEmails(): Promise<{
+export async function summarizeAndStoreEmails(userId?: string, accountEmail?: string): Promise<{
 	success: boolean
 	message: string
 	digestId?: string
@@ -80,6 +80,13 @@ export async function summarizeAndStoreEmails(): Promise<{
 				message: 'No email data found in unsummarized_debug.json'
 			}
 		}
+
+		// Get user ID and account email from latest debug entry if not provided
+		const latestDebugEntry = debugData[debugData.length - 1]
+		const actualUserId = userId || latestDebugEntry?.userId || 'user_unknown'
+		const actualAccountEmail = accountEmail || latestDebugEntry?.accountEmail || 'unknown@example.com'
+		
+		console.log(`🔍 Processing for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
 
 		// Flatten all messages from all accounts
 		const allEmails: UnsummarizedEmail[] = []
@@ -174,8 +181,8 @@ Format your output in JSON:
 		
 		const newDigest: EmailDigest = {
 			id: digestId,
-			user_id: 'user_123', // Placeholder as requested
-			account_id: 'account_abc', // Placeholder as requested
+			userId: actualUserId,
+			accountId: actualAccountEmail,
 			date: currentTimestamp.split('T')[0], // ISO date string (YYYY-MM-DD)
 			summary: validatedContent.summary,
 			highlights: validatedContent.highlights,
@@ -193,7 +200,7 @@ Format your output in JSON:
 		console.log('💾 Updating summarized_messages.json...')
 		const newSummarizedMessages: SummarizedMessage[] = unsummarizedEmails.map(email => ({
 			id: email.id,
-			account_id: 'account_abc', // Placeholder as requested
+			accountId: actualAccountEmail,
 			summarized_at: currentTimestamp
 		}))
 		
