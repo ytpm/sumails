@@ -96,13 +96,14 @@ class GmailService {
 	/**
 	 * 🚀 Efficient Strategy: Fetch today's emails with full content
 	 * Uses parallel Promise.all() approach for better performance
+	 * Fetches ALL emails from today for comprehensive analysis with pagination
 	 */
 	async fetchTodaysEmailsWithContent(
 		accessToken: string, 
-		maxResults: number = 10
+		maxResults?: number // Optional limit for testing, defaults to ALL emails
 	): Promise<EmailDataWithContent[]> {
 		try {
-			console.log('🔍 Fetching today\'s emails with full content...')
+			console.log('🔍 Fetching ALL today\'s emails with full content...')
 			
 			// Create OAuth2 client with access token
 			const oauth2Client = new google.auth.OAuth2(
@@ -113,19 +114,55 @@ class GmailService {
 			oauth2Client.setCredentials({ access_token: accessToken })
 			const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
 
-			// Step 1: List messages with today's filter
-			const messageList = await gmail.users.messages.list({
-				userId: 'me',
-				maxResults,
-				q: 'newer_than:1d', // Only today's emails
-			})
+			// Step 1: Fetch ALL messages with pagination
+			const allMessages: any[] = []
+			let pageToken: string | undefined
+			let requestCount = 0
+			const maxRequestsPerPage = 100 // Gmail's maximum per request
 
-			const messages = messageList.data.messages || []
-			console.log(`📧 Found ${messages.length} messages from today`)
+			do {
+				requestCount++
+				console.log(`📄 Fetching page ${requestCount} of today's emails...`)
+				
+				const messageList = await gmail.users.messages.list({
+					userId: 'me',
+					maxResults: maxRequestsPerPage,
+					q: 'newer_than:1d', // Only today's emails
+					pageToken,
+				})
 
-			if (messages.length === 0) {
+				const messages = messageList.data.messages || []
+				allMessages.push(...messages)
+				pageToken = messageList.data.nextPageToken || undefined
+
+				console.log(`📧 Page ${requestCount}: Found ${messages.length} messages (Total so far: ${allMessages.length})`)
+
+				// Safety check - if user specified maxResults, respect it
+				if (maxResults && allMessages.length >= maxResults) {
+					console.log(`⚠️ Reached specified limit of ${maxResults} emails`)
+					break
+				}
+
+				// Safety check - prevent infinite loops (max 10 pages = 1000 emails)
+				if (requestCount >= 10) {
+					console.log(`⚠️ Reached maximum page limit (10 pages). Total emails: ${allMessages.length}`)
+					break
+				}
+
+			} while (pageToken)
+
+			console.log(`📧 Total messages found from today: ${allMessages.length}`)
+
+			if (allMessages.length === 0) {
 				return []
 			}
+
+			// Limit to maxResults if specified
+			const messagesToProcess = maxResults 
+				? allMessages.slice(0, maxResults)
+				: allMessages
+
+			console.log(`📧 Processing ${messagesToProcess.length} messages`)
 
 			// Step 2: Parallel fetch all message details with rate limiting
 			console.log('⚡ Fetching full content in parallel...')
@@ -134,7 +171,7 @@ class GmailService {
 			const fetchWithDelay = async (messageId: string, index: number) => {
 				// Small staggered delay to avoid hitting rate limits
 				if (index > 0) {
-					await new Promise(resolve => setTimeout(resolve, 50 * index))
+					await new Promise(resolve => setTimeout(resolve, 30 * (index % 10))) // Stagger every 10 requests
 				}
 				
 				return gmail.users.messages.get({
@@ -144,24 +181,31 @@ class GmailService {
 				})
 			}
 
-			// Step 3: Execute all requests in parallel
-			const fullMessagePromises = messages.map((msg, index) => 
-				msg.id ? fetchWithDelay(msg.id, index) : null
-			).filter(Boolean)
-
-			const fullMessages = await Promise.all(fullMessagePromises)
-			console.log(`✅ Retrieved ${fullMessages.length} full messages`)
-
-			// Step 4: Parse all messages with content extraction
+			// Step 3: Execute all requests in parallel (in batches)
+			const batchSize = 20 // Process in smaller batches to avoid rate limits
 			const emailsWithContent: EmailDataWithContent[] = []
-			
-			for (const messageResponse of fullMessages) {
-				if (messageResponse?.data) {
-					const emailData = this.parseEmailDataWithContent(messageResponse.data)
-					if (emailData) {
-						emailsWithContent.push(emailData)
+
+			for (let i = 0; i < messagesToProcess.length; i += batchSize) {
+				const batch = messagesToProcess.slice(i, i + batchSize)
+				console.log(`⚡ Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(messagesToProcess.length / batchSize)} (${batch.length} emails)`)
+
+				const batchPromises = batch.map((msg, index) => 
+					msg.id ? fetchWithDelay(msg.id, index) : null
+				).filter(Boolean)
+
+				const batchResults = await Promise.all(batchPromises)
+				
+				// Parse batch results
+				for (const messageResponse of batchResults) {
+					if (messageResponse?.data) {
+						const emailData = this.parseEmailDataWithContent(messageResponse.data)
+						if (emailData) {
+							emailsWithContent.push(emailData)
+						}
 					}
 				}
+
+				console.log(`✅ Batch completed. Total processed so far: ${emailsWithContent.length}`)
 			}
 
 			console.log(`🎯 Successfully parsed ${emailsWithContent.length} emails with content`)
@@ -275,13 +319,14 @@ class GmailService {
 
 	/**
 	 * 📊 Enhanced console logging with full content
+	 * Fetches ALL today's emails for comprehensive analysis
 	 */
 	async listTodaysEmailsWithContentToConsole(
 		accessToken: string, 
-		maxResults: number = 10
+		maxResults?: number // Optional limit for testing
 	): Promise<void> {
 		try {
-			console.log('🚀 Fetching today\'s emails with full content...')
+			console.log('🚀 Fetching ALL today\'s emails with full content...')
 			const emails = await this.fetchTodaysEmailsWithContent(accessToken, maxResults)
 			
 			console.log(`\n📧 Found ${emails.length} emails from today:\n`)

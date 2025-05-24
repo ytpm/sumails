@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchGmailEmails } from '@/lib/google/actions'
+import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
 import { readJsonFile, writeJsonFile } from '@/lib/json_handler'
 import { summarizeAndStoreEmails } from '@/lib/openai/summarizeEmails'
-import type { GmailMessage, SummarizedMessage, CleanedMessage } from '@/types/email'
+import type { GmailMessageWithContent, SummarizedMessage } from '@/types/email'
 
 interface AccountProcessingLog {
 	id: string
@@ -18,7 +18,7 @@ interface AccountProcessingLog {
 
 export async function POST(request: NextRequest) {
 	try {
-		const { accessToken, accountEmail, userId, maxResults = 50, query = '' } = await request.json()
+		const { accessToken, accountEmail, userId } = await request.json()
 
 		if (!accessToken || !accountEmail || !userId) {
 			return NextResponse.json(
@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
 		const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 		const currentTimestamp = new Date().toISOString()
 
-		console.log(`🚀 Starting complete email summarization for ${accountEmail} (${userId})`)
+		console.log(`🚀 Starting enhanced email summarization for ${accountEmail} (${userId})`)
+		console.log(`📧 Fetching ALL today's emails with full content for comprehensive AI analysis...`)
 
 		// Step 1: Check if account was already processed today
 		const processingLog = await readJsonFile<AccountProcessingLog>('account_processing_log.json')
@@ -50,13 +51,25 @@ export async function POST(request: NextRequest) {
 			})
 		}
 
-		// Step 2: Fetch emails from Gmail
-		console.log(`📧 Fetching up to ${maxResults} emails from Gmail...`)
-		const emails = await fetchGmailEmails(accessToken, maxResults, query)
-		console.log(`📧 Fetched ${emails.length} emails from Gmail`)
+		// Step 2: Fetch ALL today's emails with full content from Gmail
+		console.log(`📧 Fetching ALL today's emails with full content...`)
+		const emails = await fetchTodaysEmailsWithContent(accessToken) // No maxResults limit
+		
+		// Log content statistics
+		const contentStats = {
+			totalEmails: emails.length,
+			withTextContent: emails.filter(e => e.textContent).length,
+			withHtmlContent: emails.filter(e => e.htmlContent).length,
+			avgContentLength: emails.length > 0 
+				? Math.round(emails.reduce((sum, e) => sum + (e.bodyPreview?.length || 0), 0) / emails.length)
+				: 0
+		}
+		
+		console.log(`📧 Fetched ${emails.length} emails with enhanced content`)
+		console.log(`📊 Content stats:`, contentStats)
 
 		if (emails.length === 0) {
-			console.log('📭 No emails found')
+			console.log('📭 No emails found from today')
 			
 			// Log the attempt
 			const logEntry: AccountProcessingLog = {
@@ -76,7 +89,7 @@ export async function POST(request: NextRequest) {
 
 			return NextResponse.json({
 				success: true,
-				message: 'No emails found to process',
+				message: 'No emails found from today to process',
 				emailsFetched: 0,
 				emailsSummarized: 0
 			})
@@ -118,15 +131,16 @@ export async function POST(request: NextRequest) {
 			})
 		}
 
-		// Step 4: Update debug data for AI processing
-		console.log('💾 Updating debug data...')
+		// Step 4: Update debug data for AI processing with enhanced content
+		console.log('💾 Updating debug data with enhanced email content...')
 		const existingDebugData = await readJsonFile('unsummarized_debug.json').catch(() => [])
 		
 		const newDebugEntry = {
 			userId,
 			accountEmail,
 			timestamp: currentTimestamp,
-			messages: newEmails
+			messages: newEmails,
+			contentStats // Include content statistics for debugging
 		}
 		
 		// Remove existing entry for this account and add new one
@@ -136,8 +150,8 @@ export async function POST(request: NextRequest) {
 		const updatedDebugData = [...filteredDebugData, newDebugEntry]
 		await writeJsonFile('unsummarized_debug.json', updatedDebugData)
 
-		// Step 5: Run AI summarization
-		console.log('🤖 Running AI summarization...')
+		// Step 5: Run AI summarization with enhanced content
+		console.log('🤖 Running AI summarization with enhanced email content...')
 		const summarizationResult = await summarizeAndStoreEmails(userId, accountEmail)
 
 		if (!summarizationResult.success) {
@@ -166,7 +180,9 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Step 6: Log successful processing
-		console.log('✅ Complete email summarization successful!')
+		console.log('✅ Enhanced email summarization successful!')
+		console.log(`📊 Content quality: ${contentStats.withTextContent} with text, ${contentStats.withHtmlContent} with HTML`)
+		
 		const logEntry: AccountProcessingLog = {
 			id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
 			account_email: accountEmail,
@@ -185,19 +201,20 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({
 			success: true,
-			message: `Successfully processed ${newEmails.length} emails and created AI summary`,
+			message: `Successfully processed ${newEmails.length} emails with enhanced content and created AI summary`,
 			emailsFetched: emails.length,
 			emailsSummarized: summarizationResult.processedEmails || 0,
 			alreadySummarized: emails.length - newEmails.length,
 			digestId: summarizationResult.digestId,
-			processedToday: true
+			processedToday: true,
+			contentStats // Return content statistics to the frontend
 		})
 
 	} catch (error) {
-		console.error('❌ Error in complete email summarization:', error)
+		console.error('❌ Error in enhanced email summarization:', error)
 		return NextResponse.json({
 			success: false,
-			error: 'Failed to complete email summarization'
+			error: 'Failed to complete enhanced email summarization'
 		}, { status: 500 })
 	}
 } 

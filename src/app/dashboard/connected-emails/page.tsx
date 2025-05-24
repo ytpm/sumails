@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { GmailMessage, GmailMessageWithContent } from '@/types/email'
+import type { GmailMessage } from '@/types/email'
 
 interface EmailData {
 	id: string
@@ -32,15 +32,10 @@ export default function ConnectedEmailsPage() {
 	const [accessToken, setAccessToken] = useState<string | null>(null)
 	const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
 	const [isAISummarizing, setIsAISummarizing] = useState(false)
-	const [emailCount, setEmailCount] = useState(10)
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
 	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
 	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccount | null>(null)
-	
-	// New state for content fetching
-	const [emailsWithContent, setEmailsWithContent] = useState<GmailMessageWithContent[]>([])
-	const [isFetchingContent, setIsFetchingContent] = useState(false)
 	
 	const searchParams = useSearchParams()
 
@@ -73,25 +68,10 @@ export default function ConnectedEmailsPage() {
 			const data = await response.json()
 			
 			if (data.accounts && data.accounts.length > 0) {
-				// Count active vs expired accounts
-				const activeAccounts = data.accounts.filter((acc: any) => !acc.isExpired).length
-				const totalAccounts = data.accounts.length
-				
 				setConnectedAccounts(data.accounts)
 				// Set user ID to the first one found (for credential loading)
 				setCurrentUserId(data.accounts[0].userId)
-				console.log(`📧 Loaded ${totalAccounts} connected accounts (${activeAccounts} active)`)
-				
-				// Show success message if tokens were refreshed
-				if (activeAccounts === totalAccounts && totalAccounts > 0) {
-					toast.success(`Loaded ${totalAccounts} connected accounts`, {
-						description: 'All account tokens are active and ready to use.',
-					})
-				} else if (activeAccounts > 0) {
-					toast.success(`Loaded ${totalAccounts} accounts`, {
-						description: `${activeAccounts} active accounts, ${totalAccounts - activeAccounts} with expired tokens.`,
-					})
-				}
+				console.log(`📧 Loaded ${data.accounts.length} connected accounts`)
 			} else {
 				// No accounts found
 				setConnectedAccounts([])
@@ -142,11 +122,9 @@ export default function ConnectedEmailsPage() {
 			// Deselect if already selected
 			setSelectedAccount(null)
 			setAccessToken(null)
-			setEmailsWithContent([]) // Clear emails when deselecting
 			console.log(`🔓 Deselected account: ${email}`)
 		} else {
 			// Select the account
-			setEmailsWithContent([]) // Clear previous emails
 			loadAccountCredentials(email)
 		}
 	}
@@ -188,7 +166,6 @@ export default function ConnectedEmailsPage() {
 				if (selectedAccount === accountToDisconnect.email) {
 					setSelectedAccount(null)
 					setAccessToken(null)
-					setEmailsWithContent([]) // Clear emails
 				}
 				
 				// Reload accounts to reflect the change
@@ -244,53 +221,7 @@ export default function ConnectedEmailsPage() {
 		}
 	}
 
-	// New function to fetch today's emails with content
-	const handleFetchTodaysEmailsWithContent = async () => {
-		if (!accessToken || !selectedAccount) {
-			toast.error('No account selected', {
-				description: 'Please select an account first.',
-			})
-			return
-		}
-
-		setIsFetchingContent(true)
-		try {
-			console.log('🚀 Fetching today\'s emails with full content...')
-			
-			const response = await fetch('/api/emails/today-with-content', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					accessToken,
-					maxResults: emailCount,
-				}),
-			})
-
-			const data = await response.json()
-			
-			if (data.emails) {
-				setEmailsWithContent(data.emails)
-				toast.success(`Fetched ${data.emails.length} emails with content!`, {
-					description: `${data.stats.withTextContent} with text, ${data.stats.withHtmlContent} with HTML`,
-				})
-				
-				// Log to console for debugging
-				console.log('📧 Emails with content:', data.emails)
-				console.log('📊 Content stats:', data.stats)
-			} else {
-				toast.error('Failed to fetch emails with content')
-			}
-		} catch (error) {
-			console.error('❌ Error fetching emails with content:', error)
-			toast.error('Error fetching emails with content')
-		} finally {
-			setIsFetchingContent(false)
-		}
-	}
-
-	const handleAISummarization = async () => {
+	const handleEnhancedAISummarization = async () => {
 		if (!accessToken || !selectedAccount || !currentUserId) {
 			toast.error('No account selected', {
 				description: 'Please select an account first.',
@@ -300,7 +231,7 @@ export default function ConnectedEmailsPage() {
 
 		setIsAISummarizing(true)
 		try {
-			console.log('🚀 Starting complete email summarization...')
+			console.log('🚀 Starting enhanced email summarization with full content...')
 			
 			const response = await fetch('/api/emails/summarize', {
 				method: 'POST',
@@ -311,36 +242,44 @@ export default function ConnectedEmailsPage() {
 					accessToken,
 					accountEmail: selectedAccount,
 					userId: currentUserId,
-					maxResults: emailCount,
 				}),
 			})
 
 			const data = await response.json()
 			
 			if (data.success) {
-				console.log('✅ Complete email summarization successful!')
+				console.log('✅ Enhanced email summarization successful!')
 				console.log(`📊 Emails fetched: ${data.emailsFetched}`)
 				console.log(`📧 Emails summarized: ${data.emailsSummarized}`)
 				console.log(`📊 Digest ID: ${data.digestId}`)
+				
+				// Log content statistics if available
+				if (data.contentStats) {
+					console.log(`📊 Content quality:`, data.contentStats)
+				}
 				
 				if (data.alreadyProcessed) {
 					toast.info('Account already processed today!', {
 						description: `${selectedAccount} was processed earlier today. Check email_digests.json for results.`,
 					})
 				} else {
-					toast.success('Complete email summarization finished!', {
-						description: `Fetched ${data.emailsFetched} emails, summarized ${data.emailsSummarized}. Check email_digests.json for results.`,
+					const contentInfo = data.contentStats 
+						? `${data.contentStats.withTextContent} with full text, ${data.contentStats.withHtmlContent} with HTML`
+						: 'with enhanced content'
+					
+					toast.success('Enhanced email summarization complete!', {
+						description: `Analyzed ALL ${data.emailsFetched} emails from today (${contentInfo}). Check email_digests.json for AI insights.`,
 					})
 				}
 			} else {
-				console.error('❌ Complete email summarization failed:', data.error)
-				toast.error('Complete email summarization failed', {
+				console.error('❌ Enhanced email summarization failed:', data.error)
+				toast.error('Enhanced email summarization failed', {
 					description: data.error || 'Please try again.',
 				})
 			}
 		} catch (error) {
-			console.error('❌ Error in complete email summarization:', error)
-			toast.error('Error in complete email summarization', {
+			console.error('❌ Error in enhanced email summarization:', error)
+			toast.error('Error in enhanced email summarization', {
 				description: 'Please check your connection and try again.',
 			})
 		} finally {
@@ -364,11 +303,26 @@ export default function ConnectedEmailsPage() {
 				</div>
 				
 				{isLoadingAccounts ? (
-					<div className="text-center py-8">
-						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-						<p className="text-muted-foreground">
-							Loading accounts and refreshing tokens...
-						</p>
+					// Skeleton Loading
+					<div className="space-y-3">
+						{[1, 2, 3].map((index) => (
+							<div
+								key={index}
+								className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 animate-pulse"
+							>
+								<div className="flex items-center gap-3">
+									<div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+									<div>
+										<div className="h-4 bg-muted-foreground/30 rounded w-48 mb-2" />
+										<div className="h-3 bg-muted-foreground/20 rounded w-24" />
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="h-8 bg-muted-foreground/30 rounded w-16" />
+									<div className="h-8 bg-muted-foreground/30 rounded w-20" />
+								</div>
+							</div>
+						))}
 					</div>
 				) : connectedAccounts.length === 0 ? (
 					<div className="text-center py-8">
@@ -428,97 +382,43 @@ export default function ConnectedEmailsPage() {
 				)}
 			</div>
 
-			{/* Email Actions Section */}
+			{/* Enhanced AI Summarization Section */}
 			{selectedAccount && accessToken && (
 				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
 					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
-						Email Actions for {selectedAccount}
+						📧 Enhanced AI Email Analysis for {selectedAccount}
 					</h2>
 					
 					<div className="space-y-4">
-						{/* Email Count Input */}
-						<div>
-							<label htmlFor="emailCount" className="block text-sm font-medium mb-2 text-foreground">
-								Number of emails to fetch:
-							</label>
-							<Input
-								id="emailCount"
-								type="number"
-								min="1"
-								max="100"
-								value={emailCount}
-								onChange={(e) => setEmailCount(parseInt(e.target.value) || 10)}
-								className="max-w-xs"
-							/>
+						<div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+							<h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+								🚀 What This Does
+							</h3>
+							<ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+								<li>• Fetches <strong>ALL today's emails</strong> with full content (not just snippets)</li>
+								<li>• Uses advanced AI to analyze themes, patterns, and priorities</li>
+								<li>• Identifies important emails and actionable items</li>
+								<li>• Provides personalized inbox management suggestions</li>
+								<li>• Saves results to email_digests.json for review</li>
+							</ul>
 						</div>
 
-						{/* Action Buttons */}
-						<div className="flex flex-wrap gap-3">
-							{/* Fetch Today's Emails with Content Button */}
-							<Button
-								onClick={handleFetchTodaysEmailsWithContent}
-								disabled={isFetchingContent}
-								variant="outline"
-								className="shadow-sm bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white border-0"
-							>
-								{isFetchingContent ? '📥 Fetching...' : '📥 Fetch Today\'s Emails (Full Content)'}
-							</Button>
-
-							{/* AI Summarization Button */}
-							<Button
-								onClick={handleAISummarization}
-								disabled={isAISummarizing}
-								variant="default"
-								className="shadow-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-							>
-								{isAISummarizing ? '🚀 Processing...' : '🚀 Summarize Emails with AI'}
-							</Button>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Fetched Emails Display */}
-			{emailsWithContent.length > 0 && (
-				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
-					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
-						Today's Emails ({emailsWithContent.length} found)
-					</h2>
-					
-					<div className="space-y-4 max-h-96 overflow-y-auto">
-						{emailsWithContent.map((email, index) => (
-							<div key={email.id} className="p-4 border border-border rounded-lg bg-muted/30">
-								<div className="flex justify-between items-start mb-2">
-									<h3 className="font-medium text-foreground truncate">
-										{email.subject || 'No Subject'}
-									</h3>
-									<span className="text-xs text-muted-foreground ml-2">
-										{new Date(email.date).toLocaleTimeString()}
-									</span>
-								</div>
-								
-								<p className="text-sm text-muted-foreground mb-2">
-									From: {email.from || 'Unknown Sender'}
-								</p>
-								
-								<p className="text-sm text-foreground">
-									{email.bodyPreview || email.snippet || 'No content available'}
-								</p>
-								
-								<div className="flex gap-2 mt-2">
-									{email.textContent && (
-										<span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-											Text: {email.textContent.length} chars
-										</span>
-									)}
-									{email.htmlContent && (
-										<span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-											HTML: {email.htmlContent.length} chars
-										</span>
-									)}
-								</div>
-							</div>
-						))}
+						{/* Enhanced AI Summarization Button */}
+						<Button
+							onClick={handleEnhancedAISummarization}
+							disabled={isAISummarizing}
+							size="lg"
+							className="shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
+						>
+							{isAISummarizing ? (
+								<>
+									<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+									🤖 Analyzing emails with AI...
+								</>
+							) : (
+								'🤖 Analyze Today\'s Emails with AI'
+							)}
+						</Button>
 					</div>
 				</div>
 			)}

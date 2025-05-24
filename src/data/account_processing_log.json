@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_24",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-24",
+    "last_processed_at": "2025-05-24T19:37:10.481Z",
+    "emails_fetched": 2,
+    "emails_summarized": 2,
+    "digest_id": "lNQxKLwEnRYgiy-6eGYSv",
+    "status": "success"
+  },
+  {
+    "id": "104681680828637897674_yositsafar_gmail_com_2025_05_24",
+    "account_email": "yositsafar@gmail.com",
+    "userId": "104681680828637897674",
+    "date": "2025-05-24",
+    "last_processed_at": "2025-05-24T19:37:22.286Z",
+    "emails_fetched": 7,
+    "emails_summarized": 7,
+    "digest_id": "5eTOdVs9ynJ9YWl_kHt3Z",
+    "status": "success"
+  },
+  {
+    "id": "118257279237790371687_dreamscan_aitool_gmail_com_2025_05_24",
+    "account_email": "dreamscan.aitool@gmail.com",
+    "userId": "118257279237790371687",
+    "date": "2025-05-24",
+    "last_processed_at": "2025-05-24T19:37:30.270Z",
+    "emails_fetched": 1,
+    "emails_summarized": 1,
+    "digest_id": "hVCn44Oaopz4PD2gCZqHq",
+    "status": "success"
+  }
+]

@@ -1,1 +1,67 @@
-[]
+[
+  {
+    "id": "lNQxKLwEnRYgiy-6eGYSv",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-24",
+    "summary": "Today's inbox activity includes a receipt from Morphogen, Inc. for a subscription payment and a changelog update from Railway detailing recent improvements and features. The emails primarily focus on financial transactions and service updates, with no urgent or actionable items noted.",
+    "highlights": [
+      {
+        "subject": "Your receipt from Morphogen, Inc. #2489-8808",
+        "from": "Morphogen, Inc."
+      },
+      {
+        "subject": "Bounty Hunters Rejoice, Trial Project Extinction Event, Data Safety First",
+        "from": "Railway"
+      }
+    ],
+    "suggestion": "Consider setting up filters to automatically sort receipts and newsletters into separate folders to keep your primary inbox focused on more urgent and actionable communications.",
+    "created_at": "2025-05-24T19:37:14.494Z"
+  },
+  {
+    "id": "5eTOdVs9ynJ9YWl_kHt3Z",
+    "userId": "104681680828637897674",
+    "accountId": "yositsafar@gmail.com",
+    "date": "2025-05-24",
+    "summary": "Today's inbox activity includes multiple security alerts from Google regarding account access permissions, and numerous WordPress comment notifications awaiting moderation. Additionally, there is a changelog update from Railway and a confirmation email from GoDaddy regarding an order. The primary themes revolve around account security, website management, and service updates.",
+    "highlights": [
+      {
+        "subject": "Security alert for dreamscan.aitool@gmail.com",
+        "from": "Google <no-reply@accounts.google.com>"
+      },
+      {
+        "subject": "Security alert",
+        "from": "Google <no-reply@accounts.google.com>"
+      },
+      {
+        "subject": "[ארי קבלנים] צריך לאשר: \"תיקון גגות רעפים בראשון לציון\"",
+        "from": "WordPress <wordpress@ari-kablanim.co.il>"
+      },
+      {
+        "subject": "Yossi Tsafar, thank you for your order.",
+        "from": "GoDaddy <donotreply@godaddy.com>"
+      },
+      {
+        "subject": "Bounty Hunters Rejoice, Trial Project Extinction Event, Data Safety First",
+        "from": "Railway <hello@news.railway.app>"
+      }
+    ],
+    "suggestion": "To improve inbox management, consider setting up filters to automatically categorize and prioritize security alerts and order confirmations, ensuring they receive immediate attention while reducing clutter from frequent but less urgent notifications.",
+    "created_at": "2025-05-24T19:37:27.782Z"
+  },
+  {
+    "id": "hVCn44Oaopz4PD2gCZqHq",
+    "userId": "118257279237790371687",
+    "accountId": "dreamscan.aitool@gmail.com",
+    "date": "2025-05-24",
+    "summary": "Today's inbox activity includes a security alert from Google indicating that a new application, 'Sumails - Email Summarizer,' was granted access to your account. This suggests a need to verify the legitimacy of the access or take steps to secure your account if it was unauthorized. The pattern indicates a focus on account security and permissions management.",
+    "highlights": [
+      {
+        "subject": "Security alert",
+        "from": "Google <no-reply@accounts.google.com>"
+      }
+    ],
+    "suggestion": "Consider setting up email filters to categorize security-related emails into a dedicated folder for quicker access and review, ensuring prompt action on potential threats.",
+    "created_at": "2025-05-24T19:37:33.711Z"
+  }
+]

@@ -23,6 +23,10 @@ interface UnsummarizedEmail {
 	from: string
 	internalDate?: string
 	date?: string
+	// Enhanced content fields
+	textContent?: string
+	htmlContent?: string
+	bodyPreview?: string
 }
 
 interface SummarizedMessage {
@@ -50,6 +54,12 @@ interface UnsummarizedDebugData {
 	accountEmail: string
 	timestamp: string
 	messages: UnsummarizedEmail[]
+	contentStats?: {
+		totalEmails: number
+		withTextContent: number
+		withHtmlContent: number
+		avgContentLength: number
+	}
 }
 
 // --- Initialize OpenAI Client ---
@@ -117,38 +127,52 @@ export async function summarizeAndStoreEmails(userId?: string, accountEmail?: st
 			}
 		}
 
-		// Step 4: Format emails into markdown prompt
-		console.log('📝 Formatting emails for OpenAI...')
+		// Step 4: Format emails into enhanced markdown prompt
+		console.log('📝 Formatting emails with enhanced content for OpenAI...')
 		const emailsMarkdown = unsummarizedEmails
 			.map(email => {
 				const fromValue = email.from || 'Unknown Sender'
 				const subjectValue = email.subject || 'No Subject'
-				const snippetValue = email.snippet || 'No preview available'
+				
+				// Use enhanced content in priority order: textContent > bodyPreview > snippet
+				let contentValue = 'No content available'
+				if (email.textContent) {
+					// Limit text content to 1000 characters for better AI processing
+					contentValue = email.textContent.length > 1000 
+						? email.textContent.substring(0, 1000) + '...' 
+						: email.textContent
+				} else if (email.bodyPreview) {
+					contentValue = email.bodyPreview
+				} else if (email.snippet) {
+					contentValue = email.snippet
+				}
 				
 				return `From: ${fromValue}
 Subject: ${subjectValue}
-Snippet: ${snippetValue}`
+Content: ${contentValue}`
 			})
 			.join('\n\n---\n\n')
 
-		// Step 5: Create the prompt for OpenAI
-		const systemPrompt = `You are an AI email assistant. Given the following list of recent emails, do the following:
+		// Step 5: Create enhanced prompt for OpenAI
+		const systemPrompt = `You are an AI email assistant analyzing today's email activity. Given the following list of recent emails with their full content, do the following:
 
-1. Generate a short summary of the inbox activity (2–4 sentences)
-2. Identify and highlight up to 5 important emails (include subject and sender)
-3. Suggest how the user might improve inbox management (e.g., too many promos, unread count, etc.)
+1. Generate a short summary of the inbox activity (2–4 sentences) - focus on themes, patterns, and overall activity
+2. Identify and highlight up to 5 important emails (include subject and sender) - prioritize actionable items, urgent matters, and important communications
+3. Suggest how the user might improve inbox management based on the content patterns you see
+
+You have access to the full email content, not just snippets, so provide more insightful analysis.
 
 Format your output in JSON:
 {
-  "summary": "Your short summary...",
+  "summary": "Your short summary focusing on themes and patterns...",
   "highlights": [
     {"subject": "Subject A", "from": "Sender A"},
     ...
   ],
-  "suggestion": "Your single inbox health tip or improvement idea"
+  "suggestion": "Your single inbox health tip or improvement idea based on content analysis"
 }`
 
-		const userPrompt = `Here are the recent emails to analyze:\n\n${emailsMarkdown}`
+		const userPrompt = `Here are today's emails with full content to analyze:\n\n${emailsMarkdown}`
 
 		// Step 6: Call OpenAI with structured output
 		console.log('🤖 Calling OpenAI for email summarization...')
