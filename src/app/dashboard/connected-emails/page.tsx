@@ -6,8 +6,9 @@ import ContentView from '@/components/dashboard/layout/ContentView'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ConfirmationDialog } from '@/components/dialogs'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Filter } from 'lucide-react'
 import { toast } from 'sonner'
+import type { GmailMessage } from '@/types/email'
 
 interface EmailData {
 	id: string
@@ -30,6 +31,7 @@ export default function ConnectedEmailsPage() {
 	const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
 	const [accessToken, setAccessToken] = useState<string | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
+	const [isFilteringEmails, setIsFilteringEmails] = useState(false)
 	const [emailCount, setEmailCount] = useState(10)
 	const [searchQuery, setSearchQuery] = useState('')
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -288,6 +290,96 @@ export default function ConnectedEmailsPage() {
 		}
 	}
 
+	const handleTestSummarizationFilter = async () => {
+		if (!accessToken || !selectedAccount || !currentUserId) {
+			toast.error('No account selected', {
+				description: 'Please select an account first.',
+			})
+			return
+		}
+
+		setIsFilteringEmails(true)
+		try {
+			console.log('🔍 Fetching emails for summarization filtering...')
+			console.log(`🔍 Fetching ${emailCount} emails from ${selectedAccount}...`)
+			if (searchQuery) {
+				console.log(`🔎 Search query: "${searchQuery}"`)
+			}
+			
+			// First fetch emails from Gmail
+			const emailResponse = await fetch('/api/emails', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					accessToken,
+					maxResults: emailCount,
+					query: searchQuery,
+				}),
+			})
+
+			const emailData = await emailResponse.json()
+			
+			if (!emailData.emails) {
+				console.error('❌ Failed to fetch emails:', emailData.error)
+				toast.error('Failed to fetch emails', {
+					description: emailData.error || 'Please try again.',
+				})
+				return
+			}
+
+			console.log(`📧 Fetched ${emailData.emails.length} emails, now filtering for summarization...`)
+
+			// Now filter for summarization
+			const summarizeResponse = await fetch('/api/emails/summarize', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					messages: emailData.emails,
+					userId: currentUserId,
+					accountEmail: selectedAccount,
+				}),
+			})
+
+			const summarizeData = await summarizeResponse.json()
+			
+			if (summarizeData.success) {
+				console.log('✅ Summarization filtering results:', summarizeData)
+				
+				// Log the cleaned messages to console
+				console.log(`\n📧 Cleaned messages ready for OpenAI (${summarizeData.newMessages} new):\n`)
+				summarizeData.cleanedMessages.forEach((email: any, index: number) => {
+					console.log(`--- Clean Email ${index + 1} ---`)
+					console.log(`📎 ID: ${email.id}`)
+					console.log(`📝 Subject: ${email.subject}`)
+					console.log(`👤 From: ${email.from}`)
+					console.log(`📅 Date: ${email.date}`)
+					console.log(`📄 Snippet: ${email.snippet}`)
+					console.log('-------------------\n')
+				})
+
+				toast.success('Email filtering completed!', {
+					description: `${summarizeData.totalMessages} total, ${summarizeData.alreadySummarized} already summarized, ${summarizeData.newMessages} new messages ready for AI.`,
+				})
+			} else {
+				console.error('❌ Failed to filter emails:', summarizeData.error)
+				toast.error('Failed to filter emails for summarization', {
+					description: summarizeData.error || 'Please try again.',
+				})
+			}
+		} catch (error) {
+			console.error('❌ Error in summarization filtering:', error)
+			toast.error('Error filtering emails', {
+				description: 'Please check your connection and try again.',
+			})
+		} finally {
+			setIsFilteringEmails(false)
+		}
+	}
+
 	return (
 		<ContentView>
 			{/* Connected Accounts Section */}
@@ -411,6 +503,28 @@ export default function ConnectedEmailsPage() {
 						>
 							{isLoading ? '🔄 Fetching...' : '📧 Fetch Emails & Log to Console'}
 						</Button>
+
+						{/* Test Summarization Filtering Button */}
+						<Button
+							onClick={handleTestSummarizationFilter}
+							disabled={isFilteringEmails}
+							variant="outline"
+							className="shadow-sm"
+						>
+							<Filter className="w-4 h-4 mr-2" />
+							{isFilteringEmails ? '🔄 Filtering...' : '🔍 Test Email Filtering (Pre-Summary)'}
+						</Button>
+						
+						<div className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
+							<p className="font-medium mb-1">🧪 Test Mode: Email Filtering</p>
+							<p>This button tests the pre-summarization filtering logic. It will:</p>
+							<ul className="list-disc list-inside mt-1 space-y-1">
+								<li>Fetch emails from Gmail</li>
+								<li>Filter out already summarized messages</li>
+								<li>Show what emails would be sent to AI for summarization</li>
+								<li>Save debug info to <code className="bg-background px-1 rounded">unsummarized_debug.json</code></li>
+							</ul>
+						</div>
 					</div>
 				</div>
 			)}
