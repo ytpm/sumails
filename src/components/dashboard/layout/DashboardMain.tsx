@@ -15,7 +15,7 @@ export default function DashboardMain({ children, title, description }: Dashboar
 	return (
 		<div className="flex h-screen bg-background text-foreground overflow-hidden">
 			{/* Desktop Sidebar (visible only on md screens and up) */}
-			<aside className="w-64 bg-muted p-6 hidden md:flex md:flex-col md:justify-between overflow-y-auto">
+			<aside className="w-64 bg-muted/40 border-r border-border p-6 hidden md:flex md:flex-col md:justify-between overflow-y-auto">
 				<SideMenu />
 			</aside>
 
@@ -28,7 +28,7 @@ export default function DashboardMain({ children, title, description }: Dashboar
 				<DashboardNavbar title={title} description={description} />
 				
 				{/* Main Content */}
-				<main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+				<main className="flex-1 p-6 lg:p-10 overflow-y-auto bg-background">
 					{children}
 				</main>
 			</div>

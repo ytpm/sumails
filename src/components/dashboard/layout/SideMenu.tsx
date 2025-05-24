@@ -1,64 +1,75 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import ProfileFooter from '@/components/dashboard/ProfileFooter'
 import PATHS from '@/utils/paths'
+import { cn } from '@/lib/utils'
 
 interface SideMenuProps {
 	onLinkClick?: () => void // Optional: To handle actions like closing the menu on mobile
 }
 
+const navigationItems = [
+	{
+		href: PATHS.DASHBOARD.INTERPRET.ROOT,
+		label: 'Interpret a new email',
+		disabled: false
+	},
+	{
+		href: PATHS.DASHBOARD.ROOT,
+		label: 'My emails',
+		disabled: false
+	},
+	{
+		href: PATHS.DASHBOARD.SUBSCRIPTION,
+		label: 'Email insights',
+		disabled: true
+	},
+	{
+		href: PATHS.DASHBOARD.SUBSCRIPTION,
+		label: 'Subscription',
+		disabled: false
+	},
+	{
+		href: PATHS.DASHBOARD.SETTINGS,
+		label: 'Settings',
+		disabled: false
+	}
+]
+
 export default function SideMenu({ onLinkClick }: SideMenuProps) {
+	const pathname = usePathname()
+
 	return (
 		<>
 			<div className="overflow-y-auto flex-grow">
 				<nav className="space-y-4 pt-10 md:pt-0">
-					<h2 className="text-lg font-semibold mb-6">My Account</h2>
-					<ul className="space-y-2">
-						<li>
-							<Link
-								href={PATHS.DASHBOARD.INTERPRET.ROOT}
-								className="block px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
-								onClick={onLinkClick}
-							>
-								Interpret a new email
-							</Link>
-						</li>
-						<li>
-							<Link
-								href={PATHS.DASHBOARD.ROOT}
-								className="block px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
-								onClick={onLinkClick}
-							>
-								My emails
-							</Link>
-						</li>
-						<li>
-							<Link
-								href={PATHS.DASHBOARD.SUBSCRIPTION}
-								aria-disabled="true"
-								className="block px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors opacity-50 pointer-events-none"
-								onClick={onLinkClick} // still call onLinkClick even if disabled for consistency
-							>
-								Email insights
-							</Link>
-						</li>
-						<li>
-							<Link
-								href={PATHS.DASHBOARD.SUBSCRIPTION}
-								className="block px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
-								onClick={onLinkClick}
-							>
-								Subscription
-							</Link>
-						</li>
-						<li>
-							<Link
-								href={PATHS.DASHBOARD.SETTINGS}
-								className="block px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
-								onClick={onLinkClick}
-							>
-								Settings
-							</Link>
-						</li>
+					<h2 className="text-lg font-semibold mb-6 text-foreground">My Account</h2>
+					<ul className="space-y-1">
+						{navigationItems.map((item, index) => {
+							const isActive = pathname === item.href
+							
+							return (
+								<li key={index}>
+									<Link
+										href={item.href}
+										className={cn(
+											"block px-4 py-2 rounded-md transition-colors duration-200",
+											item.disabled 
+												? "text-muted-foreground/50 hover:bg-accent/50 hover:text-accent-foreground/50 opacity-50 pointer-events-none cursor-not-allowed"
+												: isActive
+													? "bg-accent text-accent-foreground font-medium"
+													: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+										)}
+										onClick={onLinkClick}
+										aria-disabled={item.disabled}
+									>
+										{item.label}
+									</Link>
+								</li>
+							)
+						})}
 					</ul>
 				</nav>
 			</div>

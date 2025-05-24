@@ -108,8 +108,8 @@ export default function DashboardHomepage() {
 	return (
 		<ContentView>
 			{/* Authentication Section */}
-			<div className="mb-8 p-6 bg-muted rounded-lg border">
-				<h2 className="text-xl font-semibold mb-4">
+			<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
+				<h2 className="text-xl font-semibold mb-4 text-card-foreground">
 					Authentication Status
 				</h2>
 				
@@ -118,17 +118,17 @@ export default function DashboardHomepage() {
 						<p className="text-muted-foreground mb-4">
 							You need to authenticate with Google to access Gmail emails.
 						</p>
-						<Button onClick={handleGoogleAuth}>
+						<Button onClick={handleGoogleAuth} className="shadow-sm">
 							🔐 Authenticate with Google
 						</Button>
 					</div>
 				) : (
 					<div>
-						<p className="text-green-600 mb-2">
+						<p className="text-green-600 dark:text-green-400 mb-2 font-medium">
 							✅ Successfully authenticated with Google!
 						</p>
 						<p className="text-sm text-muted-foreground">
-							Access token: {accessToken.substring(0, 20)}...
+							Access token: <code className="bg-muted px-2 py-1 rounded text-xs">{accessToken.substring(0, 20)}...</code>
 						</p>
 					</div>
 				)}
@@ -136,15 +136,15 @@ export default function DashboardHomepage() {
 
 			{/* Email Fetching Section */}
 			{accessToken && (
-				<div className="mb-8 p-6 bg-muted rounded-lg border">
-					<h2 className="text-xl font-semibold mb-4">
+				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
+					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
 						Fetch Gmail Emails
 					</h2>
 					
 					<div className="space-y-4">
 						{/* Email Count Input */}
 						<div>
-							<label htmlFor="emailCount" className="block text-sm font-medium mb-2">
+							<label htmlFor="emailCount" className="block text-sm font-medium mb-2 text-foreground">
 								Number of emails to fetch:
 							</label>
 							<Input
@@ -154,12 +154,13 @@ export default function DashboardHomepage() {
 								max="100"
 								value={emailCount}
 								onChange={(e) => setEmailCount(parseInt(e.target.value) || 10)}
+								className="max-w-xs"
 							/>
 						</div>
 
 						{/* Search Query Input */}
 						<div>
-							<label htmlFor="searchQuery" className="block text-sm font-medium mb-2">
+							<label htmlFor="searchQuery" className="block text-sm font-medium mb-2 text-foreground">
 								Search query (optional):
 							</label>
 							<Input
@@ -168,6 +169,7 @@ export default function DashboardHomepage() {
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								placeholder="e.g., from:example@gmail.com, subject:important, is:unread"
+								className="max-w-lg"
 							/>
 							<p className="text-xs text-muted-foreground mt-1">
 								Use Gmail search operators like from:, subject:, is:unread, etc.
@@ -178,6 +180,7 @@ export default function DashboardHomepage() {
 						<Button
 							onClick={handleFetchEmails}
 							disabled={isLoading}
+							className="shadow-sm"
 						>
 							{isLoading ? '🔄 Fetching...' : '📧 Fetch Emails & Log to Console'}
 						</Button>
@@ -186,8 +189,8 @@ export default function DashboardHomepage() {
 			)}
 
 			{/* Instructions Section */}
-			<div className="p-6 bg-muted rounded-lg border">
-				<h2 className="text-xl font-semibold mb-4">
+			<div className="p-6 bg-card border border-border rounded-lg shadow-sm">
+				<h2 className="text-xl font-semibold mb-4 text-card-foreground">
 					📋 Instructions
 				</h2>
 				
@@ -211,10 +214,10 @@ export default function DashboardHomepage() {
 						<h3 className="font-medium text-foreground mb-2">Search Operators</h3>
 						<p>You can use Gmail search operators like:</p>
 						<ul className="list-disc list-inside mt-2 space-y-1">
-							<li><code>from:example@gmail.com</code> - Emails from specific sender</li>
-							<li><code>subject:important</code> - Emails with specific subject</li>
-							<li><code>is:unread</code> - Unread emails only</li>
-							<li><code>has:attachment</code> - Emails with attachments</li>
+							<li><code className="bg-muted px-2 py-1 rounded text-xs">from:example@gmail.com</code> - Emails from specific sender</li>
+							<li><code className="bg-muted px-2 py-1 rounded text-xs">subject:important</code> - Emails with specific subject</li>
+							<li><code className="bg-muted px-2 py-1 rounded text-xs">is:unread</code> - Unread emails only</li>
+							<li><code className="bg-muted px-2 py-1 rounded text-xs">has:attachment</code> - Emails with attachments</li>
 						</ul>
 					</div>
 				</div>

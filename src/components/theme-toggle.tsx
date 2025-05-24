@@ -17,9 +17,9 @@ export function ThemeToggle() {
 	if (!mounted) {
 		return (
 			<div className="flex items-center space-x-2">
-				<Sun className="h-4 w-4" />
+				<Sun className="h-4 w-4 text-muted-foreground" />
 				<Switch disabled />
-				<Moon className="h-4 w-4" />
+				<Moon className="h-4 w-4 text-muted-foreground" />
 			</div>
 		)
 	}
@@ -28,13 +28,14 @@ export function ThemeToggle() {
 
 	return (
 		<div className="flex items-center space-x-2">
-			<Sun className="h-4 w-4 text-muted-foreground" />
+			<Sun className={`h-4 w-4 transition-colors ${isDark ? 'text-muted-foreground' : 'text-yellow-500'}`} />
 			<Switch
 				checked={isDark}
 				onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
 				aria-label="Toggle theme"
+				className="data-[state=checked]:bg-primary"
 			/>
-			<Moon className="h-4 w-4 text-muted-foreground" />
+			<Moon className={`h-4 w-4 transition-colors ${isDark ? 'text-blue-400' : 'text-muted-foreground'}`} />
 		</div>
 	)
 } 
