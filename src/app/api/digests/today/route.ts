@@ -6,12 +6,15 @@ interface EmailDigest {
 	userId: string
 	accountId: string
 	date: string
-	summary: string
+	status?: 'attention_needed' | 'worth_a_look' | 'all_clear'
+	overview?: string[]
+	insight?: string
+	summary?: string
 	highlights: Array<{
 		subject: string
 		from: string
 	}>
-	suggestion: string
+	suggestion?: string
 	created_at: string
 }
 

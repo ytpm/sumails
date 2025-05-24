@@ -5,14 +5,16 @@ import { readJsonFile, writeJsonFile } from '@/lib/json_handler'
 
 // --- Zod Schema Definitions ---
 export const EmailSummaryGeneratedContentSchema = z.object({
-	summary: z.string().describe('A short summary of the inbox activity (2-4 sentences)'),
+	status: z.enum(['attention_needed', 'worth_a_look', 'all_clear']).describe('The general state of the inbox'),
+	overview: z.array(z.string()).describe('3 short bullet points about inbox activity'),
+	insight: z.string().describe('One-sentence AI assessment of the inbox'),
 	highlights: z.array(
 		z.object({
 			subject: z.string().describe('The subject of the important email'),
 			from: z.string().describe('The sender of the important email'),
 		})
 	).describe('Up to 5 important emails with subject and sender'),
-	suggestion: z.string().describe('A single inbox health tip or improvement idea'),
+	suggestion: z.string().optional().describe('Optional inbox cleanup suggestion'),
 })
 
 // --- Type Definitions ---
@@ -40,12 +42,14 @@ interface EmailDigest {
 	userId: string
 	accountId: string
 	date: string
-	summary: string
+	status: 'attention_needed' | 'worth_a_look' | 'all_clear'
+	overview: string[]
+	insight: string
 	highlights: Array<{
 		subject: string
 		from: string
 	}>
-	suggestion: string
+	suggestion?: string
 	created_at: string
 }
 
@@ -154,22 +158,42 @@ Content: ${contentValue}`
 			.join('\n\n---\n\n')
 
 		// Step 5: Create enhanced prompt for OpenAI
-		const systemPrompt = `You are an AI email assistant analyzing today's email activity. Given the following list of recent emails with their full content, do the following:
+		const systemPrompt = `You are an AI email assistant summarizing today's email activity. Given the full content of recent emails, perform the following:
 
-1. Generate a short summary of the inbox activity (2–4 sentences) - focus on themes, patterns, and overall activity
-2. Identify and highlight up to 5 important emails (include subject and sender) - prioritize actionable items, urgent matters, and important communications
-3. Suggest how the user might improve inbox management based on the content patterns you see
+1. Determine the general state of the inbox. Choose one of the following values:
+   - "attention_needed": critical or urgent content like security alerts, payment failures, or requests
+   - "worth_a_look": some messages may need a glance or follow-up, but nothing urgent
+   - "all_clear": no urgent content, mostly newsletters, promos, or routine updates
 
-You have access to the full email content, not just snippets, so provide more insightful analysis.
+2. Generate a concise inbox overview as a list of 3 short bullet points:
+   - 📬 Number of emails received today (e.g., "28 emails today")
+   - 🔥 Number of flagged or actionable emails (e.g., "2 urgent messages")
+   - 💬 Topics or categories observed (e.g., "Topics: billing, platform updates, newsletters")
 
-Format your output in JSON:
+3. Provide a one-sentence AI insight:
+   - Summarize your assessment of the inbox (e.g., "Security alerts were present, but no immediate action needed.")
+
+4. List up to 5 highlights (subject and sender):
+   - Focus only on clearly important or actionable emails
+
+5. Optionally, return one inbox cleanup suggestion if relevant:
+   - Suggest unsubscribing from up to 3 promotional senders
+   - Format the string like: "Consider unsubscribing from X, Y and Z (if many. State the name of the sender) to reduce clutter."
+
+Return a JSON object with this structure:
 {
-  "summary": "Your short summary focusing on themes and patterns...",
-  "highlights": [
-    {"subject": "Subject A", "from": "Sender A"},
-    ...
+  "status": "attention_needed" | "worth_a_look" | "all_clear",
+  "overview": [
+    "📬 28 emails today",
+    "🔥 2 important messages",
+    "💬 Topics: security alerts, payments, newsletters"
   ],
-  "suggestion": "Your single inbox health tip or improvement idea based on content analysis"
+  "insight": "Security alerts need review, but nothing time-sensitive.",
+  "highlights": [
+    { "subject": "Reset your password", "from": "Google" },
+    { "subject": "Payment failed for invoice #3389", "from": "Stripe" }
+  ],
+  "suggestion": "Consider unsubscribing from bolt.new, Gett Taxi, and Vibe to reduce clutter."
 }`
 
 		const userPrompt = `Here are today's emails with full content to analyze:\n\n${emailsMarkdown}`
@@ -208,7 +232,9 @@ Format your output in JSON:
 			userId: actualUserId,
 			accountId: actualAccountEmail,
 			date: currentTimestamp.split('T')[0], // ISO date string (YYYY-MM-DD)
-			summary: validatedContent.summary,
+			status: validatedContent.status,
+			overview: validatedContent.overview,
+			insight: validatedContent.insight,
 			highlights: validatedContent.highlights,
 			suggestion: validatedContent.suggestion,
 			created_at: currentTimestamp
@@ -234,9 +260,11 @@ Format your output in JSON:
 		console.log('✅ Email summarization completed successfully!')
 		console.log(`📊 Digest created with ID: ${digestId}`)
 		console.log(`📧 Processed ${unsummarizedEmails.length} emails`)
-		console.log(`📝 Summary: ${validatedContent.summary}`)
+		console.log(`📊 Status: ${validatedContent.status}`)
+		console.log(`📋 Overview: ${validatedContent.overview.join(', ')}`)
+		console.log(`💡 Insight: ${validatedContent.insight}`)
 		console.log(`⭐ Highlights: ${validatedContent.highlights.length} important emails`)
-		console.log(`💡 Suggestion: ${validatedContent.suggestion}`)
+		console.log(`💡 Suggestion: ${validatedContent.suggestion || 'None'}`)
 
 		return {
 			success: true,

@@ -11,12 +11,15 @@ interface EmailDigest {
 	userId: string
 	accountId: string
 	date: string
-	summary: string
+	status?: 'attention_needed' | 'worth_a_look' | 'all_clear'
+	overview?: string[]
+	insight?: string
+	summary?: string
 	highlights: Array<{
 		subject: string
 		from: string
 	}>
-	suggestion: string
+	suggestion?: string
 	created_at: string
 }
 
@@ -90,6 +93,46 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 			setContentHeight(contentRef.current.scrollHeight)
 		}
 	}, [digest.highlights, digest.suggestion])
+
+	// Get status styling and icon
+	const getStatusConfig = (status: string | undefined) => {
+		switch (status) {
+			case 'attention_needed':
+				return {
+					icon: '🚨',
+					text: 'Attention Needed',
+					bgColor: 'bg-red-100 dark:bg-red-900/30',
+					textColor: 'text-red-800 dark:text-red-200',
+					borderColor: 'border-red-200 dark:border-red-800'
+				}
+			case 'worth_a_look':
+				return {
+					icon: '👀',
+					text: 'Worth a Look',
+					bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
+					textColor: 'text-yellow-800 dark:text-yellow-200',
+					borderColor: 'border-yellow-200 dark:border-yellow-800'
+				}
+			case 'all_clear':
+				return {
+					icon: '✅',
+					text: 'All Clear',
+					bgColor: 'bg-green-100 dark:bg-green-900/30',
+					textColor: 'text-green-800 dark:text-green-200',
+					borderColor: 'border-green-200 dark:border-green-800'
+				}
+			default:
+				return {
+					icon: '📧',
+					text: 'Legacy Format',
+					bgColor: 'bg-gray-100 dark:bg-gray-900/30',
+					textColor: 'text-gray-800 dark:text-gray-200',
+					borderColor: 'border-gray-200 dark:border-gray-800'
+				}
+		}
+	}
+
+	const statusConfig = getStatusConfig(digest.status)
 	
 	return (
 		<div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
@@ -103,6 +146,14 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 					<div className="flex items-center gap-3">
 						<div className={`w-3 h-3 rounded-full ${isExpired ? 'bg-red-500' : 'bg-green-500'}`} />
 						<h3 className="font-semibold text-foreground">{accountEmail}</h3>
+						
+						{/* Status Badge */}
+						<span className={`px-2 py-1 ${statusConfig.bgColor} ${statusConfig.textColor} text-xs font-medium rounded-full border ${statusConfig.borderColor} transition-all duration-200 ${
+							isExpanded ? 'scale-105' : 'scale-100'
+						}`}>
+							{statusConfig.icon} {statusConfig.text}
+						</span>
+
 						{digest.highlights.length > 0 && (
 							<span className={`px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-xs font-medium rounded-full transition-all duration-200 ${
 								isExpanded ? 'scale-105' : 'scale-100'
@@ -132,21 +183,50 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 					</div>
 				</div>
 
-				{/* Summary - Always visible */}
-				<div>
-					<div className="flex items-center justify-between mb-2">
+				{/* Overview - Always visible */}
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
 						<h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-							📝 Summary
+							📊 Overview
 						</h4>
 						{!isExpanded && digest.highlights.length > 0 && (
 							<span className="text-xs text-muted-foreground transition-opacity duration-200">
-								Click to view highlights
+								Click to view details
 							</span>
 						)}
 					</div>
-					<p className="text-sm text-muted-foreground leading-relaxed">
-						{digest.summary}
-					</p>
+					
+					{/* Overview bullet points */}
+					<div className="space-y-1">
+						{digest.overview && digest.overview.length > 0 ? (
+							digest.overview.map((point, index) => (
+								<div key={index} className="flex items-start gap-2">
+									<span className="text-muted-foreground mt-0.5">•</span>
+									<p className="text-sm text-muted-foreground leading-relaxed">
+										{point}
+									</p>
+								</div>
+							))
+						) : (
+							// Fallback for old format or missing overview
+							<div className="flex items-start gap-2">
+								<span className="text-muted-foreground mt-0.5">•</span>
+								<p className="text-sm text-muted-foreground leading-relaxed">
+									{(digest as any).summary || 'No overview available'}
+								</p>
+							</div>
+						)}
+					</div>
+
+					{/* AI Insight */}
+					<div className="pt-2">
+						<h4 className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
+							🧠 AI Insight
+						</h4>
+						<p className="text-sm text-muted-foreground leading-relaxed italic">
+							{digest.insight || 'Processing email insights...'}
+						</p>
+					</div>
 				</div>
 			</div>
 
@@ -290,11 +370,8 @@ function SummaryHeader({ date, onRefresh, isRefreshing }: {
 		<div className="flex items-center justify-between mb-8">
 			<div>
 				<h1 className="text-3xl font-bold text-foreground mb-2">
-					📅 Today's Email Summary
+					📅 {formatDate(date)}
 				</h1>
-				<p className="text-muted-foreground">
-					{formatDate(date)}
-				</p>
 			</div>
 			<Button
 				onClick={onRefresh}
