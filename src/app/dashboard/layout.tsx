@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import DashboardMain from '@/components/dashboard/layout/DashboardMain'
-import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeProvider } from '@/providers/themes/ThemeProvider'
 
 interface DashboardLayoutProps {
   children: ReactNode

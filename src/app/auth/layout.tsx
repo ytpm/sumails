@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { LightThemeProvider } from '@/components/light-theme-provider'
+import { LightThemeProvider } from '@/providers/themes/LightThemeProvider'
 
 interface AuthLayoutProps {
   children: ReactNode

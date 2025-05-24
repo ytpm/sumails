@@ -1,4 +1,4 @@
-import { ThemeToggle } from '@/components/theme-toggle'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface DashboardNavbarProps {
 	title?: string
