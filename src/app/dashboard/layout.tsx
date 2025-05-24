@@ -9,10 +9,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <ThemeProvider>
-      <DashboardMain 
-        title="Gmail Integration Dashboard" 
-        description="Connect and manage your Gmail emails with our AI-powered email analysis tools."
-      >
+      <DashboardMain>
         {children}
       </DashboardMain>
     </ThemeProvider>

@@ -3,15 +3,16 @@
 import { ReactNode } from 'react'
 import SideMenu from './SideMenu'
 import DashboardNavbar from '../DashboardNavbar'
+import { usePageInfo } from '@/hooks/usePageInfo'
 // import MobileMenu from './MobileMenu'
 
 interface DashboardMainProps {
 	children: ReactNode
-	title?: string
-	description?: string
 }
 
-export default function DashboardMain({ children, title, description }: DashboardMainProps) {
+export default function DashboardMain({ children }: DashboardMainProps) {
+	const { title, description } = usePageInfo()
+
 	return (
 		<div className="flex h-screen bg-background text-foreground overflow-hidden">
 			{/* Desktop Sidebar (visible only on md screens and up) */}

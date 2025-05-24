@@ -31,6 +31,7 @@ export default function ConnectedEmailsPage() {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [connectionSuccess, setConnectionSuccess] = useState<string | null>(null)
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
 	const searchParams = useSearchParams()
 
 	useEffect(() => {
@@ -95,6 +96,74 @@ export default function ConnectedEmailsPage() {
 			}
 		} catch (error) {
 			console.error('❌ Error loading credentials:', error)
+		}
+	}
+
+	const handleSelectAccount = (email: string) => {
+		if (selectedAccount === email) {
+			// Deselect if already selected
+			setSelectedAccount(null)
+			setAccessToken(null)
+			console.log(`🔓 Deselected account: ${email}`)
+		} else {
+			// Select the account
+			loadAccountCredentials(email)
+		}
+	}
+
+	const handleDisconnectAccount = async (email: string) => {
+		// Find the account to get the userId
+		const account = connectedAccounts.find(acc => acc.email === email)
+		if (!account) {
+			console.error('❌ Account not found')
+			return
+		}
+
+		// Confirm before disconnecting
+		const confirmed = window.confirm(
+			`Are you sure you want to disconnect ${email}?\n\nThis will remove the account from your connected accounts and you'll need to reconnect it to use it again.`
+		)
+
+		if (!confirmed) return
+
+		setDisconnectingAccount(email)
+		
+		try {
+			const response = await fetch('/api/auth/accounts/disconnect', {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					userId: account.userId,
+					email: email
+				})
+			})
+
+			const data = await response.json()
+
+			if (response.ok) {
+				// If the disconnected account was selected, clear selection
+				if (selectedAccount === email) {
+					setSelectedAccount(null)
+					setAccessToken(null)
+				}
+				
+				// Reload accounts to reflect the change
+				await loadConnectedAccounts()
+				
+				console.log(`🗑️ Successfully disconnected: ${email}`)
+				
+				// Show success message briefly
+				setConnectionSuccess(`Disconnected ${email}`)
+				setTimeout(() => setConnectionSuccess(null), 3000)
+			} else {
+				console.error('❌ Failed to disconnect account:', data.error)
+			}
+		} catch (error) {
+			console.error('❌ Error disconnecting account:', error)
+		} finally {
+			setDisconnectingAccount(null)
 		}
 	}
 
@@ -179,7 +248,7 @@ export default function ConnectedEmailsPage() {
 				<div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
 					<div className="flex justify-between items-center">
 						<p className="text-green-800 dark:text-green-200 font-medium">
-							✅ Successfully connected {connectionSuccess}!
+							✅ {connectionSuccess.includes('Disconnected') ? connectionSuccess : `Successfully connected ${connectionSuccess}!`}
 						</p>
 						<Button
 							variant="ghost"
@@ -232,18 +301,30 @@ export default function ConnectedEmailsPage() {
 										<p className="font-medium text-foreground">{account.email}</p>
 										<p className="text-sm text-muted-foreground">
 											{account.isExpired ? 'Token expired' : 'Active'}
+											{selectedAccount === account.email && ' • Selected'}
 										</p>
 									</div>
 								</div>
-								<Button
-									onClick={() => loadAccountCredentials(account.email)}
-									variant={selectedAccount === account.email ? "default" : "outline"}
-									size="sm"
-									disabled={account.isExpired}
-									className="shadow-sm"
-								>
-									{selectedAccount === account.email ? '✓ Selected' : 'Select'}
-								</Button>
+								<div className="flex items-center gap-2">
+									<Button
+										onClick={() => handleSelectAccount(account.email)}
+										variant={selectedAccount === account.email ? "default" : "outline"}
+										size="sm"
+										disabled={account.isExpired}
+										className="shadow-sm"
+									>
+										{selectedAccount === account.email ? '✓ Selected' : 'Select'}
+									</Button>
+									<Button
+										onClick={() => handleDisconnectAccount(account.email)}
+										variant="outline"
+										size="sm"
+										disabled={disconnectingAccount === account.email}
+										className="shadow-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+									>
+										{disconnectingAccount === account.email ? '🔄' : '🗑️ Disconnect'}
+									</Button>
+								</div>
 							</div>
 						))}
 					</div>
@@ -318,12 +399,17 @@ export default function ConnectedEmailsPage() {
 					
 					<div>
 						<h3 className="font-medium text-foreground mb-2">Step 2: Select Account</h3>
-						<p>Choose which connected Gmail account you want to fetch emails from.</p>
+						<p>Choose which connected Gmail account you want to fetch emails from. Click "Select" to choose or "✓ Selected" to deselect.</p>
 					</div>
 					
 					<div>
 						<h3 className="font-medium text-foreground mb-2">Step 3: Fetch Emails</h3>
 						<p>Configure your search and fetch emails. Results will be logged to the browser console (F12).</p>
+					</div>
+					
+					<div>
+						<h3 className="font-medium text-foreground mb-2">Disconnect Account</h3>
+						<p>Use the "🗑️ Disconnect" button to remove an account. You'll be asked to confirm before the account is removed.</p>
 					</div>
 					
 					<div>
