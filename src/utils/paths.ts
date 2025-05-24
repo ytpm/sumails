@@ -1,9 +1,10 @@
 const PATHS = {
 	DASHBOARD: {
 		ROOT: '/dashboard',
-		INTERPRET: {
-			ROOT: '/dashboard/interpret'
-		},
+		TODAY_SUMMARY: '/dashboard/today-summary',
+		EMAIL_ANALYTICS: '/dashboard/email-analytics',
+		EMAIL_HEALTH: '/dashboard/email-health',
+		CONNECTED_EMAILS: '/dashboard/connected-emails',
 		SUBSCRIPTION: '/dashboard/subscription',
 		SETTINGS: '/dashboard/settings'
 	}

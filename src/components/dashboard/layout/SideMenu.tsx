@@ -12,19 +12,24 @@ interface SideMenuProps {
 
 const navigationItems = [
 	{
-		href: PATHS.DASHBOARD.INTERPRET.ROOT,
-		label: 'Interpret a new email',
+		href: PATHS.DASHBOARD.TODAY_SUMMARY,
+		label: 'Today\'s summary',
 		disabled: false
 	},
 	{
-		href: PATHS.DASHBOARD.ROOT,
-		label: 'My emails',
+		href: PATHS.DASHBOARD.EMAIL_ANALYTICS,
+		label: 'Email analytics',
 		disabled: false
 	},
 	{
-		href: PATHS.DASHBOARD.SUBSCRIPTION,
-		label: 'Email insights',
-		disabled: true
+		href: PATHS.DASHBOARD.EMAIL_HEALTH,
+		label: 'Email health',
+		disabled: false
+	},
+	{
+		href: PATHS.DASHBOARD.CONNECTED_EMAILS,
+		label: 'Connected emails',
+		disabled: false
 	},
 	{
 		href: PATHS.DASHBOARD.SUBSCRIPTION,

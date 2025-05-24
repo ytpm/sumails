@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 		await saveCredentials(tokens, userInfo)
 		
 		// Redirect to dashboard with success
-		const redirectUrl = new URL('/dashboard', request.url)
+		const redirectUrl = new URL('/dashboard/connected-emails', request.url)
 		redirectUrl.searchParams.set('connected', 'success')
 		redirectUrl.searchParams.set('email', userInfo.email)
 		
