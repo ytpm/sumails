@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import ContentView from '@/components/dashboard/layout/ContentView'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ConfirmationDialog } from '@/components/dialogs'
+import { Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface EmailData {
 	id: string
@@ -29,9 +32,10 @@ export default function ConnectedEmailsPage() {
 	const [isLoading, setIsLoading] = useState(false)
 	const [emailCount, setEmailCount] = useState(10)
 	const [searchQuery, setSearchQuery] = useState('')
-	const [connectionSuccess, setConnectionSuccess] = useState<string | null>(null)
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
+	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
+	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccount | null>(null)
 	const searchParams = useSearchParams()
 
 	useEffect(() => {
@@ -40,7 +44,9 @@ export default function ConnectedEmailsPage() {
 		const connectedEmail = searchParams.get('email')
 		
 		if (connected === 'success' && connectedEmail) {
-			setConnectionSuccess(connectedEmail)
+			toast.success(`Successfully connected ${connectedEmail}!`, {
+				description: 'You can now select this account to fetch emails.',
+			})
 			// Clear URL parameters
 			window.history.replaceState({}, '', '/dashboard/connected-emails')
 			// Reload accounts to show the newly connected account
@@ -70,6 +76,7 @@ export default function ConnectedEmailsPage() {
 			}
 		} catch (error) {
 			console.error('❌ Error loading connected accounts:', error)
+			toast.error('Failed to load connected accounts')
 			setCurrentUserId('user_123') // Fallback user ID
 		}
 	}
@@ -80,6 +87,7 @@ export default function ConnectedEmailsPage() {
 			const account = connectedAccounts.find(acc => acc.email === email)
 			if (!account) {
 				console.error('❌ Account not found in connected accounts')
+				toast.error('Account not found')
 				return
 			}
 			
@@ -90,12 +98,17 @@ export default function ConnectedEmailsPage() {
 				setAccessToken(data.accessToken)
 				setSelectedAccount(email)
 				setCurrentUserId(account.userId) // Update current user ID
+				toast.success(`Selected ${email}`, {
+					description: 'You can now fetch emails from this account.',
+				})
 				console.log(`🔑 Loaded credentials for ${email} (userId: ${account.userId})`)
 			} else {
 				console.error('❌ Failed to load credentials:', data.error)
+				toast.error('Failed to load account credentials')
 			}
 		} catch (error) {
 			console.error('❌ Error loading credentials:', error)
+			toast.error('Error loading account credentials')
 		}
 	}
 
@@ -104,6 +117,7 @@ export default function ConnectedEmailsPage() {
 			// Deselect if already selected
 			setSelectedAccount(null)
 			setAccessToken(null)
+			toast.info(`Deselected ${email}`)
 			console.log(`🔓 Deselected account: ${email}`)
 		} else {
 			// Select the account
@@ -111,22 +125,23 @@ export default function ConnectedEmailsPage() {
 		}
 	}
 
-	const handleDisconnectAccount = async (email: string) => {
+	const handleDisconnectClick = (email: string) => {
 		// Find the account to get the userId
 		const account = connectedAccounts.find(acc => acc.email === email)
 		if (!account) {
 			console.error('❌ Account not found')
+			toast.error('Account not found')
 			return
 		}
 
-		// Confirm before disconnecting
-		const confirmed = window.confirm(
-			`Are you sure you want to disconnect ${email}?\n\nThis will remove the account from your connected accounts and you'll need to reconnect it to use it again.`
-		)
+		setAccountToDisconnect(account)
+		setShowDisconnectDialog(true)
+	}
 
-		if (!confirmed) return
+	const handleDisconnectConfirm = async () => {
+		if (!accountToDisconnect) return
 
-		setDisconnectingAccount(email)
+		setDisconnectingAccount(accountToDisconnect.email)
 		
 		try {
 			const response = await fetch('/api/auth/accounts/disconnect', {
@@ -135,8 +150,8 @@ export default function ConnectedEmailsPage() {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
-					userId: account.userId,
-					email: email
+					userId: accountToDisconnect.userId,
+					email: accountToDisconnect.email
 				})
 			})
 
@@ -144,7 +159,7 @@ export default function ConnectedEmailsPage() {
 
 			if (response.ok) {
 				// If the disconnected account was selected, clear selection
-				if (selectedAccount === email) {
+				if (selectedAccount === accountToDisconnect.email) {
 					setSelectedAccount(null)
 					setAccessToken(null)
 				}
@@ -152,19 +167,35 @@ export default function ConnectedEmailsPage() {
 				// Reload accounts to reflect the change
 				await loadConnectedAccounts()
 				
-				console.log(`🗑️ Successfully disconnected: ${email}`)
+				console.log(`🗑️ Successfully disconnected: ${accountToDisconnect.email}`)
 				
-				// Show success message briefly
-				setConnectionSuccess(`Disconnected ${email}`)
-				setTimeout(() => setConnectionSuccess(null), 3000)
+				// Show success toast
+				toast.success(`Disconnected ${accountToDisconnect.email}`, {
+					description: 'The account has been removed from your connected accounts.',
+				})
+				
+				// Close dialog
+				setShowDisconnectDialog(false)
 			} else {
 				console.error('❌ Failed to disconnect account:', data.error)
+				toast.error('Failed to disconnect account', {
+					description: data.error || 'Please try again.',
+				})
 			}
 		} catch (error) {
 			console.error('❌ Error disconnecting account:', error)
+			toast.error('Error disconnecting account', {
+				description: 'Please check your connection and try again.',
+			})
 		} finally {
 			setDisconnectingAccount(null)
+			setAccountToDisconnect(null)
 		}
+	}
+
+	const handleDisconnectCancel = () => {
+		setShowDisconnectDialog(false)
+		setAccountToDisconnect(null)
 	}
 
 	const handleGoogleAuth = async () => {
@@ -178,9 +209,11 @@ export default function ConnectedEmailsPage() {
 				window.location.href = data.authUrl
 			} else {
 				console.error('❌ Failed to get auth URL')
+				toast.error('Failed to get authentication URL')
 			}
 		} catch (error) {
 			console.error('❌ Error getting auth URL:', error)
+			toast.error('Error starting authentication')
 		}
 	}
 
@@ -199,11 +232,19 @@ export default function ConnectedEmailsPage() {
 		})
 
 		console.log(`✅ Successfully listed ${emails.length} emails to console`)
+		
+		// Show success toast
+		toast.success(`Fetched ${emails.length} emails`, {
+			description: 'Check the browser console for detailed email information.',
+		})
 	}
 
 	const handleFetchEmails = async () => {
 		if (!accessToken) {
 			console.error('❌ No access token available. Please select an account first.')
+			toast.error('No account selected', {
+				description: 'Please select an account first.',
+			})
 			return
 		}
 
@@ -233,9 +274,15 @@ export default function ConnectedEmailsPage() {
 				logEmailsToConsole(data.emails)
 			} else {
 				console.error('❌ Failed to fetch emails:', data.error)
+				toast.error('Failed to fetch emails', {
+					description: data.error || 'Please try again.',
+				})
 			}
 		} catch (error) {
 			console.error('❌ Error fetching emails:', error)
+			toast.error('Error fetching emails', {
+				description: 'Please check your connection and try again.',
+			})
 		} finally {
 			setIsLoading(false)
 		}
@@ -243,34 +290,17 @@ export default function ConnectedEmailsPage() {
 
 	return (
 		<ContentView>
-			{/* Connection Success Message */}
-			{connectionSuccess && (
-				<div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-					<div className="flex justify-between items-center">
-						<p className="text-green-800 dark:text-green-200 font-medium">
-							✅ {connectionSuccess.includes('Disconnected') ? connectionSuccess : `Successfully connected ${connectionSuccess}!`}
-						</p>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setConnectionSuccess(null)}
-							className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-						>
-							✕
-						</Button>
-					</div>
-				</div>
-			)}
-
 			{/* Connected Accounts Section */}
 			<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
 				<div className="flex justify-between items-center mb-4">
 					<h2 className="text-xl font-semibold text-card-foreground">
 						Connected Gmail Accounts
 					</h2>
-					<Button onClick={handleGoogleAuth} variant="outline" className="shadow-sm">
-						🔐 Connect Another Account
-					</Button>
+					{connectedAccounts.length > 0 && (
+						<Button onClick={handleGoogleAuth} variant="outline" className="shadow-sm">
+							🔐 Connect Another Account
+						</Button>
+					)}
 				</div>
 				
 				{connectedAccounts.length === 0 ? (
@@ -316,7 +346,7 @@ export default function ConnectedEmailsPage() {
 										{selectedAccount === account.email ? '✓ Selected' : 'Select'}
 									</Button>
 									<Button
-										onClick={() => handleDisconnectAccount(account.email)}
+										onClick={() => handleDisconnectClick(account.email)}
 										variant="outline"
 										size="sm"
 										disabled={disconnectingAccount === account.email}
@@ -424,6 +454,21 @@ export default function ConnectedEmailsPage() {
 					</div>
 				</div>
 			</div>
+
+			{/* Confirmation Dialog */}
+			<ConfirmationDialog
+				open={showDisconnectDialog}
+				onOpenChange={setShowDisconnectDialog}
+				title="Disconnect Account"
+				description={`Are you sure you want to disconnect ${accountToDisconnect?.email}? This will remove the account from your connected accounts and you'll need to reconnect it to use it again.`}
+				confirmText="Disconnect"
+				cancelText="Cancel"
+				confirmVariant="destructive"
+				onConfirm={handleDisconnectConfirm}
+				onCancel={handleDisconnectCancel}
+				isLoading={disconnectingAccount === accountToDisconnect?.email}
+				icon={<Trash2 className="w-5 h-5 text-red-600" />}
+			/>
 		</ContentView>
 	)
 } 
