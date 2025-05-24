@@ -11,9 +11,9 @@ export interface GmailMessage {
 
 // Summarized message metadata stored in JSON
 export interface SummarizedMessage {
-	userId: string
-	accountEmail: string
-	messageId: string
+	id: string
+	account_id: string
+	summarized_at: string
 }
 
 // Cleaned message structure for OpenAI summarization

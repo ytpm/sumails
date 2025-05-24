@@ -6,7 +6,7 @@ import ContentView from '@/components/dashboard/layout/ContentView'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ConfirmationDialog } from '@/components/dialogs'
-import { Trash2, Filter } from 'lucide-react'
+import { Trash2, BarChart } from 'lucide-react'
 import { toast } from 'sonner'
 import type { GmailMessage } from '@/types/email'
 
@@ -31,7 +31,9 @@ export default function ConnectedEmailsPage() {
 	const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
 	const [accessToken, setAccessToken] = useState<string | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
-	const [isFilteringEmails, setIsFilteringEmails] = useState(false)
+	const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
+	const [isAISummarizing, setIsAISummarizing] = useState(false)
+	const [isLoadingLog, setIsLoadingLog] = useState(false)
 	const [emailCount, setEmailCount] = useState(10)
 	const [searchQuery, setSearchQuery] = useState('')
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -60,16 +62,34 @@ export default function ConnectedEmailsPage() {
 	}, [searchParams])
 
 	const loadConnectedAccounts = async () => {
+		setIsLoadingAccounts(true)
 		try {
+			console.log('🔄 Loading connected accounts and checking tokens...')
+			
 			// Load all accounts regardless of user ID (for development)
 			const response = await fetch('/api/auth/accounts/all')
 			const data = await response.json()
 			
 			if (data.accounts && data.accounts.length > 0) {
+				// Count active vs expired accounts
+				const activeAccounts = data.accounts.filter((acc: any) => !acc.isExpired).length
+				const totalAccounts = data.accounts.length
+				
 				setConnectedAccounts(data.accounts)
 				// Set user ID to the first one found (for credential loading)
 				setCurrentUserId(data.accounts[0].userId)
-				console.log(`📧 Loaded ${data.accounts.length} connected accounts`)
+				console.log(`📧 Loaded ${totalAccounts} connected accounts (${activeAccounts} active)`)
+				
+				// Show success message if tokens were refreshed
+				if (activeAccounts === totalAccounts && totalAccounts > 0) {
+					toast.success(`Loaded ${totalAccounts} connected accounts`, {
+						description: 'All account tokens are active and ready to use.',
+					})
+				} else if (activeAccounts > 0) {
+					toast.success(`Loaded ${totalAccounts} accounts`, {
+						description: `${activeAccounts} active accounts, ${totalAccounts - activeAccounts} with expired tokens.`,
+					})
+				}
 			} else {
 				// No accounts found
 				setConnectedAccounts([])
@@ -78,8 +98,12 @@ export default function ConnectedEmailsPage() {
 			}
 		} catch (error) {
 			console.error('❌ Error loading connected accounts:', error)
-			toast.error('Failed to load connected accounts')
+			toast.error('Failed to load connected accounts', {
+				description: 'Please try refreshing the page.',
+			})
 			setCurrentUserId('user_123') // Fallback user ID
+		} finally {
+			setIsLoadingAccounts(false)
 		}
 	}
 
@@ -290,7 +314,7 @@ export default function ConnectedEmailsPage() {
 		}
 	}
 
-	const handleTestSummarizationFilter = async () => {
+	const handleAISummarization = async () => {
 		if (!accessToken || !selectedAccount || !currentUserId) {
 			toast.error('No account selected', {
 				description: 'Please select an account first.',
@@ -298,85 +322,99 @@ export default function ConnectedEmailsPage() {
 			return
 		}
 
-		setIsFilteringEmails(true)
+		setIsAISummarizing(true)
 		try {
-			console.log('🔍 Fetching emails for summarization filtering...')
-			console.log(`🔍 Fetching ${emailCount} emails from ${selectedAccount}...`)
-			if (searchQuery) {
-				console.log(`🔎 Search query: "${searchQuery}"`)
-			}
+			console.log('🚀 Starting complete email summarization...')
 			
-			// First fetch emails from Gmail
-			const emailResponse = await fetch('/api/emails', {
+			const response = await fetch('/api/emails/summarize', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
 					accessToken,
+					accountEmail: selectedAccount,
+					userId: currentUserId,
 					maxResults: emailCount,
 					query: searchQuery,
 				}),
 			})
 
-			const emailData = await emailResponse.json()
+			const data = await response.json()
 			
-			if (!emailData.emails) {
-				console.error('❌ Failed to fetch emails:', emailData.error)
-				toast.error('Failed to fetch emails', {
-					description: emailData.error || 'Please try again.',
-				})
-				return
-			}
-
-			console.log(`📧 Fetched ${emailData.emails.length} emails, now filtering for summarization...`)
-
-			// Now filter for summarization
-			const summarizeResponse = await fetch('/api/emails/summarize', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					messages: emailData.emails,
-					userId: currentUserId,
-					accountEmail: selectedAccount,
-				}),
-			})
-
-			const summarizeData = await summarizeResponse.json()
-			
-			if (summarizeData.success) {
-				console.log('✅ Summarization filtering results:', summarizeData)
+			if (data.success) {
+				console.log('✅ Complete email summarization successful!')
+				console.log(`📊 Emails fetched: ${data.emailsFetched}`)
+				console.log(`📧 Emails summarized: ${data.emailsSummarized}`)
+				console.log(`📊 Digest ID: ${data.digestId}`)
 				
-				// Log the cleaned messages to console
-				console.log(`\n📧 Cleaned messages ready for OpenAI (${summarizeData.newMessages} new):\n`)
-				summarizeData.cleanedMessages.forEach((email: any, index: number) => {
-					console.log(`--- Clean Email ${index + 1} ---`)
-					console.log(`📎 ID: ${email.id}`)
-					console.log(`📝 Subject: ${email.subject}`)
-					console.log(`👤 From: ${email.from}`)
-					console.log(`📅 Date: ${email.date}`)
-					console.log(`📄 Snippet: ${email.snippet}`)
-					console.log('-------------------\n')
-				})
-
-				toast.success('Email filtering completed!', {
-					description: `${summarizeData.totalMessages} total, ${summarizeData.alreadySummarized} already summarized, ${summarizeData.newMessages} new messages ready for AI.`,
-				})
+				if (data.alreadyProcessed) {
+					toast.info('Account already processed today!', {
+						description: `${selectedAccount} was processed earlier today. Check email_digests.json for results.`,
+					})
+				} else {
+					toast.success('Complete email summarization finished!', {
+						description: `Fetched ${data.emailsFetched} emails, summarized ${data.emailsSummarized}. Check email_digests.json for results.`,
+					})
+				}
 			} else {
-				console.error('❌ Failed to filter emails:', summarizeData.error)
-				toast.error('Failed to filter emails for summarization', {
-					description: summarizeData.error || 'Please try again.',
+				console.error('❌ Complete email summarization failed:', data.error)
+				toast.error('Complete email summarization failed', {
+					description: data.error || 'Please try again.',
 				})
 			}
 		} catch (error) {
-			console.error('❌ Error in summarization filtering:', error)
-			toast.error('Error filtering emails', {
+			console.error('❌ Error in complete email summarization:', error)
+			toast.error('Error in complete email summarization', {
 				description: 'Please check your connection and try again.',
 			})
 		} finally {
-			setIsFilteringEmails(false)
+			setIsAISummarizing(false)
+		}
+	}
+
+	const handleViewProcessingLog = async () => {
+		setIsLoadingLog(true)
+		try {
+			console.log('📊 Loading account processing log...')
+			
+			const response = await fetch('/api/processing-log')
+			const data = await response.json()
+			
+			if (data.success) {
+				console.log('✅ Processing log loaded successfully!')
+				console.log(`📊 Total entries: ${data.total}`)
+				
+				console.log('\n📋 Account Processing Log:\n')
+				data.logs.forEach((log: any, index: number) => {
+					console.log(`--- Entry ${index + 1} ---`)
+					console.log(`📧 Account: ${log.account_email}`)
+					console.log(`👤 User ID: ${log.user_id}`)
+					console.log(`📅 Date: ${log.date}`)
+					console.log(`⏰ Processed: ${new Date(log.last_processed_at).toLocaleString()}`)
+					console.log(`📧 Emails Fetched: ${log.emails_fetched}`)
+					console.log(`🤖 Emails Summarized: ${log.emails_summarized}`)
+					console.log(`📊 Digest ID: ${log.digest_id || 'N/A'}`)
+					console.log(`✅ Status: ${log.status}`)
+					console.log('-------------------\n')
+				})
+				
+				toast.success('Processing log loaded!', {
+					description: `Found ${data.total} processing entries. Check browser console for details.`,
+				})
+			} else {
+				console.error('❌ Failed to load processing log:', data.error)
+				toast.error('Failed to load processing log', {
+					description: data.error || 'Please try again.',
+				})
+			}
+		} catch (error) {
+			console.error('❌ Error loading processing log:', error)
+			toast.error('Error loading processing log', {
+				description: 'Please check your connection and try again.',
+			})
+		} finally {
+			setIsLoadingLog(false)
 		}
 	}
 
@@ -388,14 +426,21 @@ export default function ConnectedEmailsPage() {
 					<h2 className="text-xl font-semibold text-card-foreground">
 						Connected Gmail Accounts
 					</h2>
-					{connectedAccounts.length > 0 && (
+					{connectedAccounts.length > 0 && !isLoadingAccounts && (
 						<Button onClick={handleGoogleAuth} variant="outline" className="shadow-sm">
 							🔐 Connect Another Account
 						</Button>
 					)}
 				</div>
 				
-				{connectedAccounts.length === 0 ? (
+				{isLoadingAccounts ? (
+					<div className="text-center py-8">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+						<p className="text-muted-foreground">
+							Loading accounts and refreshing tokens...
+						</p>
+					</div>
+				) : connectedAccounts.length === 0 ? (
 					<div className="text-center py-8">
 						<p className="text-muted-foreground mb-4">
 							No Gmail accounts connected yet.
@@ -504,26 +549,39 @@ export default function ConnectedEmailsPage() {
 							{isLoading ? '🔄 Fetching...' : '📧 Fetch Emails & Log to Console'}
 						</Button>
 
-						{/* Test Summarization Filtering Button */}
+						{/* AI Summarization Button */}
 						<Button
-							onClick={handleTestSummarizationFilter}
-							disabled={isFilteringEmails}
+							onClick={handleAISummarization}
+							disabled={isAISummarizing}
+							variant="default"
+							className="shadow-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+						>
+							{isAISummarizing ? '🚀 Processing...' : '🚀 Summarize Emails with AI'}
+						</Button>
+
+						{/* View Processing Log Button */}
+						<Button
+							onClick={handleViewProcessingLog}
+							disabled={isLoadingLog}
 							variant="outline"
 							className="shadow-sm"
 						>
-							<Filter className="w-4 h-4 mr-2" />
-							{isFilteringEmails ? '🔄 Filtering...' : '🔍 Test Email Filtering (Pre-Summary)'}
+							<BarChart className="w-4 h-4 mr-2" />
+							{isLoadingLog ? '📊 Loading...' : '📊 View Processing Log'}
 						</Button>
-						
-						<div className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
-							<p className="font-medium mb-1">🧪 Test Mode: Email Filtering</p>
-							<p>This button tests the pre-summarization filtering logic. It will:</p>
-							<ul className="list-disc list-inside mt-1 space-y-1">
-								<li>Fetch emails from Gmail</li>
-								<li>Filter out already summarized messages</li>
-								<li>Show what emails would be sent to AI for summarization</li>
-								<li>Save debug info to <code className="bg-background px-1 rounded">unsummarized_debug.json</code></li>
+
+						<div className="text-xs text-muted-foreground mt-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+							<p className="font-medium mb-1 text-blue-900 dark:text-blue-100">🚀 AI Email Summarization</p>
+							<p className="text-blue-800 dark:text-blue-200">This will automatically:</p>
+							<ul className="list-disc list-inside mt-1 space-y-1 text-blue-700 dark:text-blue-300">
+								<li>✅ Check if account was already processed today</li>
+								<li>📧 Fetch latest emails from Gmail API</li>
+								<li>🔍 Filter out already summarized messages</li>
+								<li>🤖 Send to OpenAI GPT-4o for intelligent analysis</li>
+								<li>💾 Save results and update tracking files</li>
 							</ul>
+							<p className="mt-2 text-blue-600 dark:text-blue-400 font-medium">⚡ Perfect for daily email summaries!</p>
+							<p className="mt-1 text-xs text-blue-500 dark:text-blue-500">Daily processing prevention: Won't re-process the same account twice in one day</p>
 						</div>
 					</div>
 				</div>
@@ -538,7 +596,7 @@ export default function ConnectedEmailsPage() {
 				<div className="space-y-4 text-sm text-muted-foreground">
 					<div>
 						<h3 className="font-medium text-foreground mb-2">Step 1: Connect Gmail Account</h3>
-						<p>Click "Connect Gmail Account" to authenticate with Google. Your credentials will be securely saved.</p>
+						<p>Click "Connect Gmail Account" to authenticate with Google. Your credentials will be securely saved and automatically refreshed when needed.</p>
 					</div>
 					
 					<div>
@@ -547,8 +605,18 @@ export default function ConnectedEmailsPage() {
 					</div>
 					
 					<div>
-						<h3 className="font-medium text-foreground mb-2">Step 3: Fetch Emails</h3>
-						<p>Configure your search and fetch emails. Results will be logged to the browser console (F12).</p>
+						<h3 className="font-medium text-foreground mb-2">🔄 Automatic Token Refresh</h3>
+						<p>Expired account tokens are automatically refreshed when you load the dashboard. You should see all accounts as "Active" - if any show as "Token expired", try refreshing the page.</p>
+					</div>
+					
+					<div>
+						<h3 className="font-medium text-foreground mb-2">Step 3: Summarize Emails</h3>
+						<p>Use "🚀 Summarize Emails with AI" to automatically fetch, filter, and summarize emails. Use "📧 Fetch Emails & Log to Console" for testing/debugging only.</p>
+					</div>
+					
+					<div>
+						<h3 className="font-medium text-foreground mb-2">AI Summarization</h3>
+						<p>The AI summarization performs the complete workflow: fetch from Gmail, filter already processed emails, send to OpenAI GPT-4o, and save results to JSON files.</p>
 					</div>
 					
 					<div>

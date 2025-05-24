@@ -20,14 +20,17 @@
     "google-auth-library": "^9.15.1",
     "googleapis": "^149.0.0",
     "lucide-react": "^0.511.0",
+    "nanoid": "^5.1.5",
     "next": "15.1.8",
     "next-themes": "^0.4.6",
+    "openai": "^4.103.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-intersection-observer": "^9.16.0",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.25.28"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
