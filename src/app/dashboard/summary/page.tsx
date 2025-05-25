@@ -177,8 +177,8 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: DigestWi
 					<div className="space-y-1">
 						{digest.overview && digest.overview.length > 0 ? (
 							digest.overview.map((point, index) => (
-								<div key={index} className="flex items-start gap-2">
-									<span className="text-muted-foreground mt-0.5">•</span>
+								<div key={index} className="flex items-baseline gap-2">
+									<span className="text-muted-foreground text-sm">•</span>
 									<p className="text-sm text-muted-foreground leading-relaxed">
 										{point}
 									</p>
@@ -186,8 +186,8 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: DigestWi
 							))
 						) : (
 							// Fallback for old format or missing overview
-							<div className="flex items-start gap-2">
-								<span className="text-muted-foreground mt-0.5">•</span>
+							<div className="flex items-baseline gap-2">
+								<span className="text-muted-foreground text-sm">•</span>
 								<p className="text-sm text-muted-foreground leading-relaxed">
 									Email digest available
 								</p>
@@ -301,9 +301,10 @@ interface DatePickerProps {
 	onDateChange: (date: string) => void
 	onFetch: () => void
 	isLoading: boolean
+	hasSummaries: boolean
 }
 
-function DatePicker({ selectedDate, onDateChange, onFetch, isLoading }: DatePickerProps) {
+function DatePicker({ selectedDate, onDateChange, onFetch, isLoading, hasSummaries }: DatePickerProps) {
 	const today = new Date().toISOString().split('T')[0]
 	
 	return (
@@ -322,24 +323,26 @@ function DatePicker({ selectedDate, onDateChange, onFetch, isLoading }: DatePick
 				max={today}
 				className="w-auto"
 			/>
-			<Button
-				onClick={onFetch}
-				disabled={isLoading || !selectedDate}
-				variant="default"
-				className="shadow-sm"
-			>
-				{isLoading ? (
-					<>
-						<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-						Loading...
-					</>
-				) : (
-					<>
-						<Calendar className="w-4 h-4 mr-2" />
-						Fetch Summary
-					</>
-				)}
-			</Button>
+			{!hasSummaries && (
+				<Button
+					onClick={onFetch}
+					disabled={isLoading || !selectedDate}
+					variant="default"
+					className="shadow-sm"
+				>
+					{isLoading ? (
+						<>
+							<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+							Loading...
+						</>
+					) : (
+						<>
+							<Calendar className="w-4 h-4 mr-2" />
+							Fetch Summary
+						</>
+					)}
+				</Button>
+			)}
 		</div>
 	)
 }
@@ -431,6 +434,10 @@ export default function SummaryPage() {
 		setSelectedDate(date)
 		setHasSearched(false)
 		setDigests([])
+		// Automatically load summaries for the new date
+		if (date) {
+			loadDigestsByDate(date)
+		}
 	}
 
 	const handleFetch = () => {
@@ -445,10 +452,12 @@ export default function SummaryPage() {
 		}
 	}
 
-	// Set default date to today
+	// Set default date to today and load summaries
 	useEffect(() => {
 		const today = new Date().toISOString().split('T')[0]
 		setSelectedDate(today)
+		// Automatically load summaries for today
+		loadDigestsByDate(today)
 	}, [])
 
 	return (
@@ -465,6 +474,7 @@ export default function SummaryPage() {
 					onDateChange={handleDateChange}
 					onFetch={handleFetch}
 					isLoading={isLoading}
+					hasSummaries={digests.length > 0}
 				/>
 
 				{isLoading ? (
