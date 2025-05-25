@@ -1,35 +1,79 @@
 [
   {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_18",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-18",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 1,
+    "emails_summarized": 1,
+    "digest_id": "jp6X3LV718jtTOv-dSGSu",
+    "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_19",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-19",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 4,
+    "emails_summarized": 4,
+    "digest_id": "ZTQDwmNzbzB3SC4XOFep7",
+    "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_20",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-20",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 9,
+    "emails_summarized": 9,
+    "digest_id": "caqPZz9kGIEVCYyVmB32m",
+    "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_21",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-21",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 8,
+    "emails_summarized": 8,
+    "digest_id": "zfGc9e3_86djFC06A0AAA",
+    "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_22",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-22",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 4,
+    "emails_summarized": 4,
+    "digest_id": "kNyJGl3b_K2eW1-Byx-Jf",
+    "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_23",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-23",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 5,
+    "emails_summarized": 5,
+    "digest_id": "pWhkjvD8SXroDeLANG7X6",
+    "status": "success"
+  },
+  {
     "id": "115467879480945091792_yt_playmania_io_2025_05_24",
     "account_email": "yt@playmania.io",
     "userId": "115467879480945091792",
     "date": "2025-05-24",
-    "last_processed_at": "2025-05-24T20:11:38.765Z",
-    "emails_fetched": 2,
-    "emails_summarized": 2,
-    "digest_id": "ZWUkceYmKf1sZEdMUD1va",
-    "status": "success"
-  },
-  {
-    "id": "104681680828637897674_yositsafar_gmail_com_2025_05_24",
-    "account_email": "yositsafar@gmail.com",
-    "userId": "104681680828637897674",
-    "date": "2025-05-24",
-    "last_processed_at": "2025-05-24T20:11:42.787Z",
-    "emails_fetched": 7,
-    "emails_summarized": 7,
-    "digest_id": "8uxASsmN6NSqeB58Y271K",
-    "status": "success"
-  },
-  {
-    "id": "118257279237790371687_dreamscan_aitool_gmail_com_2025_05_24",
-    "account_email": "dreamscan.aitool@gmail.com",
-    "userId": "118257279237790371687",
-    "date": "2025-05-24",
-    "last_processed_at": "2025-05-24T20:11:47.286Z",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
     "emails_fetched": 1,
     "emails_summarized": 1,
-    "digest_id": "gmYsLaSjWpupDe0lQAXo-",
+    "digest_id": "KNq2xLr0bgUusLAblN0FB",
     "status": "success"
   },
   {
@@ -37,32 +81,10 @@
     "account_email": "yt@playmania.io",
     "userId": "115467879480945091792",
     "date": "2025-05-25",
-    "last_processed_at": "2025-05-25T04:33:11.366Z",
-    "emails_fetched": 1,
-    "emails_summarized": 1,
-    "digest_id": "FJe6w2nuMIbg2AvkPUfG_",
-    "status": "success"
-  },
-  {
-    "id": "104681680828637897674_yositsafar_gmail_com_2025_05_25",
-    "account_email": "yositsafar@gmail.com",
-    "userId": "104681680828637897674",
-    "date": "2025-05-25",
-    "last_processed_at": "2025-05-25T04:33:15.779Z",
-    "emails_fetched": 3,
-    "emails_summarized": 3,
-    "digest_id": "4a3XySnuGRkjRKivl9OL6",
-    "status": "success"
-  },
-  {
-    "id": "118257279237790371687_dreamscan_aitool_gmail_com_2025_05_25",
-    "account_email": "dreamscan.aitool@gmail.com",
-    "userId": "118257279237790371687",
-    "date": "2025-05-25",
-    "last_processed_at": "2025-05-25T04:33:19.080Z",
-    "emails_fetched": 1,
-    "emails_summarized": 1,
-    "digest_id": "9nMqylfdWL00pT20LC9Z3",
+    "last_processed_at": "2025-05-25T17:11:21.136Z",
+    "emails_fetched": 2,
+    "emails_summarized": 2,
+    "digest_id": "iAl_acKRTxmG21kjFbk7X",
     "status": "success"
   }
 ]

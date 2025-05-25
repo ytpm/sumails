@@ -26,7 +26,7 @@ const openai = new OpenAI({
 /**
  * Summarize and store emails using OpenAI
  */
-export async function summarizeAndStoreEmails(userId?: string, accountEmail?: string): Promise<{
+export async function summarizeAndStoreEmails(userId?: string, accountEmail?: string, targetDate?: string): Promise<{
 	success: boolean
 	message: string
 	digestId?: string
@@ -52,19 +52,28 @@ export async function summarizeAndStoreEmails(userId?: string, accountEmail?: st
 		const actualUserId = userId || latestDebugEntry?.userId || 'user_unknown'
 		const actualAccountEmail = accountEmail || latestDebugEntry?.accountEmail || 'unknown@example.com'
 		
-		console.log(`🚀 Starting summarizeAndStoreEmails for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
+		console.log(`🚀 Starting summarizeAndStoreEmails for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}${targetDate ? `, targetDate: ${targetDate}` : ''}`)
 
 		// Step 1: Load unsummarized emails for this account from debug data
 		console.log('📂 Loading unsummarized debug data...')
-		const accountData = debugData.find(entry => 
-			entry.userId === actualUserId && entry.accountEmail === actualAccountEmail
-		)
+		
+		// If targetDate is provided, look for specific date entry, otherwise use latest
+		const accountData = targetDate 
+			? debugData.find(entry => 
+				entry.userId === actualUserId && 
+				entry.accountEmail === actualAccountEmail && 
+				(entry as any).targetDate === targetDate
+			)
+			: debugData.find(entry => 
+				entry.userId === actualUserId && entry.accountEmail === actualAccountEmail
+			)
 
 		if (!accountData) {
-			console.log(`❌ No debug data found for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
+			const dateInfo = targetDate ? ` for date ${targetDate}` : ''
+			console.log(`❌ No debug data found for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}${dateInfo}`)
 			return {
 				success: false,
-				message: `No unsummarized emails found for ${actualAccountEmail}. Please fetch emails first.`
+				message: `No unsummarized emails found for ${actualAccountEmail}${dateInfo}. Please fetch emails first.`
 			}
 		}
 
@@ -130,18 +139,21 @@ Content: ${contentValue}`
 			.join('\n\n---\n\n')
 
 		// Step 5: Create enhanced prompt for OpenAI
-		const systemPrompt = `You are an AI email assistant helping the user manage their Gmail inbox. You have access to the full content of all emails received today. Your job is to make sense of the inbox, surface what's important, and reduce the user's cognitive load.
+		// Adjust prompt based on whether this is for a specific date or general
+		const timeContext = targetDate ? `for ${targetDate}` : 'from the last 7 days for initial account setup'
+		const systemPrompt = `You are an AI email assistant helping the user manage their Gmail inbox. You have access to emails ${timeContext}. Your job is to make sense of the inbox, surface what's important, and reduce the user's cognitive load.
 
 Perform the following:
 
 1. **Overview (bullet points)**
-   Create 3 to 5 short bullet points that give a quick overview of today's inbox activity. Include:
-   - Number of emails received (e.g., "Received 28 emails today")
-   - Number of important or actionable messages (e.g., "2 important messages flagged")
-   - Topics or categories observed (e.g., "Topics: billing, platform updates, newsletters")
+   Create 3 to 5 short bullet points that give a quick overview of the inbox activity. Include:
+   - Number of emails received (e.g., "Received 12 emails today" or "Received 45 emails this week")
+   - Number of important or actionable messages (e.g., "3 important messages flagged")
+   - Topics or categories observed (e.g., "Topics: work projects, billing, newsletters")
+   ${targetDate ? '' : '- Weekly patterns if notable (e.g., "Heavy email volume on weekdays")'}
 
 2. **Insight**
-   Write one short sentence summarizing your assessment of today's inbox. Be specific and helpful. (e.g., "Security alerts were present, but no immediate action is needed.")
+   Write one short sentence summarizing your assessment of the inbox. Be specific and helpful. (e.g., "Several urgent work items need attention, but overall inbox health is good.")
 
 3. **Important Emails**
    Highlight up to 5 emails that deserve attention. Prioritize:
@@ -159,17 +171,17 @@ Perform the following:
    Classify the inbox into one of the following:
    - \`"attention_needed"\`: contains urgent or important emails
    - \`"worth_a_look"\`: moderate relevance, some things to review
-   - \`"all_clear"\`: nothing important today
+   - \`"all_clear"\`: nothing critical ${targetDate ? 'today' : 'this week'}
 
 5. **Suggestions for Cleanup**
-   Suggest up to 3 actions the user can take to reduce clutter or improve inbox hygiene. Focus on patterns in senders, email types, or repeated content. (e.g., "Unsubscribe from Bolt, GetTaxi, and Uber Eats promotions")
+   Suggest up to 3 actions the user can take to reduce clutter or improve inbox hygiene. Focus on patterns in senders, email types, or repeated content. (e.g., "Unsubscribe from daily promotional emails")
 
 Return your output in the following JSON format:
 
-\`\`\`json
+\`\`\`
 {
   "overview": ["string", "string", "string"],
-  "insight": "string",
+  "insight": "string", 
   "important_emails": [
     {
       "subject": "string",
@@ -183,7 +195,7 @@ Return your output in the following JSON format:
 \`\`\`
 `
 
-		const userPrompt = `Here are today's emails with full content to analyze:\n\n${emailsMarkdown}`
+		const userPrompt = `Here are the emails with full content to analyze:\n\n${emailsMarkdown}`
 
 		// Step 6: Call OpenAI with structured output
 		console.log('🤖 Calling OpenAI for email summarization...')
@@ -218,7 +230,7 @@ Return your output in the following JSON format:
 			id: digestId,
 			userId: actualUserId,
 			accountId: actualAccountEmail,
-			date: currentTimestamp.split('T')[0], // ISO date string (YYYY-MM-DD)
+			date: targetDate || currentTimestamp.split('T')[0], // Use targetDate if provided, otherwise today
 			created_at: currentTimestamp,
 
 			// Map new fields from validatedContent

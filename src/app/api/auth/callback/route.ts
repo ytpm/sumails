@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { setGmailCredentials } from '@/lib/google/actions'
 import { saveCredentials, getUserInfo } from '@/lib/google/credentials'
-import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
+import { fetchTodaysEmailsWithContent, fetchEmailsFromPeriod } from '@/lib/google/actions'
 import { summarizeAndStoreEmails } from '@/lib/openai/summarizeEmails'
 import { writeJsonFile, readJsonFile } from '@/lib/json_handler'
+import { groupEmailsByDate, createDailyDigest } from '@/lib/email-utils'
 import type { GmailMessageWithContent, SummarizedMessage, EmailDigest } from '@/types/email'
 import type { AccountProcessingLog } from '@/types/api'
 
@@ -48,21 +49,19 @@ export async function GET(request: NextRequest) {
 		console.log(`✅ Credentials saved for ${userInfo.email}. Proceeding to initial summarization...`)
 
 		try {
-			// --- Start of summarization logic (adapted from /api/emails/summarize) ---
-			const accessToken = tokens.access_token // From the current OAuth flow
+			// --- Start of enhanced daily digest creation logic ---
+			const accessToken = tokens.access_token
 			const accountEmail = userInfo.email
 			const userId = userInfo.id
-
-			const today = new Date().toISOString().split('T')[0]
 			const currentTimestamp = new Date().toISOString()
 
 			console.log(`🚀 Performing initial email summarization for new account: ${accountEmail} (${userId})`)
 
-			// Step 1: Fetch today's emails
-			const emails = await fetchTodaysEmailsWithContent(accessToken)
-			console.log(`📧 Fetched ${emails.length} emails for initial summary.`)
+			// Step 1: Fetch emails from last 7 days
+			const emails = await fetchEmailsFromPeriod(accessToken, 7)
+			console.log(`📧 Fetched ${emails.length} emails from last 7 days for initial summary.`)
 
-			const contentStats = { // Log content stats
+			const contentStats = {
 				totalEmails: emails.length,
 				withTextContent: emails.filter(e => e.textContent).length,
 				withHtmlContent: emails.filter(e => e.htmlContent).length,
@@ -73,57 +72,90 @@ export async function GET(request: NextRequest) {
 			console.log(`📊 Initial content stats:`, contentStats)
 
 			if (emails.length === 0) {
-				console.log('📭 No emails found from today for initial summary.')
-				// Optionally log to account_processing_log.json even for initial setup
+				console.log('📭 No emails found from last 7 days for initial summary.')
 			} else {
-				// Step 2: Prepare data for AI (save to unsummarized_debug.json)
-				// This step is crucial as summarizeAndStoreEmails reads from this file.
-				const existingDebugData = await readJsonFile<any>('unsummarized_debug.json').catch(() => [])
-				const newDebugEntry = {
-					userId,
-					accountEmail,
-					timestamp: currentTimestamp,
-					messages: emails, // emails are already GmailMessageWithContent
-					contentStats
-				}
-				// Ensure existingDebugData is an array
-				const currentDebugDataArray = Array.isArray(existingDebugData) ? existingDebugData : []
-				const filteredDebugData = currentDebugDataArray.filter((entry: any) =>
-					!(entry.userId === userId && entry.accountEmail === accountEmail)
-				)
-				const updatedDebugData = [...filteredDebugData, newDebugEntry]
-				await writeJsonFile('unsummarized_debug.json', updatedDebugData)
-				console.log('💾 Saved fetched emails to unsummarized_debug.json for AI processing.')
+				// Step 2: Group emails by their actual received date
+				console.log('📅 Grouping emails by date...')
+				const emailsByDate = groupEmailsByDate(emails)
+				const dates = Object.keys(emailsByDate).sort() // Sort dates chronologically
+				
+				console.log(`📊 Found emails across ${dates.length} days:`)
+				dates.forEach(date => {
+					console.log(`  📅 ${date}: ${emailsByDate[date].length} emails`)
+				})
 
-				// Step 3: Run AI summarization
-				const summarizationResult = await summarizeAndStoreEmails(userId, accountEmail)
+				// Step 3: Create daily digests for each date
+				const digestResults = []
+				let totalEmailsProcessed = 0
+				let totalDigestsCreated = 0
 
-				if (summarizationResult.success) {
-					console.log(`✅ Initial summarization successful for ${accountEmail}. Digest ID: ${summarizationResult.digestId}`)
-					// Log to account_processing_log.json
-					const processingLogArray = await readJsonFile<AccountProcessingLog>('account_processing_log.json').catch(() => [])
-					const currentProcessingLog = Array.isArray(processingLogArray) ? processingLogArray : []
+				for (const date of dates) {
+					const dayEmails = emailsByDate[date]
+					console.log(`\n🔄 Processing ${dayEmails.length} emails for ${date}...`)
+					
+					try {
+						const result = await createDailyDigest(userId, accountEmail, date, dayEmails)
+						digestResults.push({
+							date,
+							success: result.success,
+							digestId: result.digestId,
+							emailsProcessed: result.processedEmails || 0,
+							message: result.message
+						})
 
-					const logEntry: AccountProcessingLog = {
-						id: `${userId}_${accountEmail}_${today}`.replace(/[^a-zA-Z0-9_]/g, '_'),
-						account_email: accountEmail,
-						userId: userId,
-						date: today,
-						last_processed_at: currentTimestamp,
-						emails_fetched: emails.length,
-						emails_summarized: summarizationResult.processedEmails || 0,
-						digest_id: summarizationResult.digestId,
-						status: 'success'
+						if (result.success) {
+							totalEmailsProcessed += result.processedEmails || 0
+							totalDigestsCreated++
+							console.log(`✅ Created digest for ${date}: ${result.digestId}`)
+						} else {
+							console.error(`❌ Failed to create digest for ${date}: ${result.message}`)
+						}
+					} catch (error) {
+						console.error(`❌ Error processing ${date}:`, error)
+						digestResults.push({
+							date,
+							success: false,
+							emailsProcessed: 0,
+							message: `Error: ${error}`
+						})
 					}
-					const updatedLog = currentProcessingLog.filter(log => log.id !== logEntry.id)
-					updatedLog.push(logEntry)
-					await writeJsonFile('account_processing_log.json', updatedLog)
-				} else {
-					console.error(`❌ Initial summarization failed for ${accountEmail}: ${summarizationResult.message}`)
-					// Optionally log failure to account_processing_log.json
 				}
+
+				// Step 4: Log processing results to account_processing_log.json
+				console.log(`\n📊 Summary: Created ${totalDigestsCreated}/${dates.length} daily digests`)
+				console.log(`📧 Total emails processed: ${totalEmailsProcessed}/${emails.length}`)
+
+				// Create a summary log entry for the initial setup
+				const processingLogArray = await readJsonFile<AccountProcessingLog>('account_processing_log.json').catch(() => [])
+				const currentProcessingLog = Array.isArray(processingLogArray) ? processingLogArray : []
+
+				// Create log entries for each successful date
+				for (const result of digestResults) {
+					if (result.success) {
+						const logEntry: AccountProcessingLog = {
+							id: `${userId}_${accountEmail}_${result.date}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+							account_email: accountEmail,
+							userId: userId,
+							date: result.date,
+							last_processed_at: currentTimestamp,
+							emails_fetched: emailsByDate[result.date].length,
+							emails_summarized: result.emailsProcessed,
+							digest_id: result.digestId,
+							status: 'success'
+						}
+						
+						// Remove any existing entry for this date and add new one
+						const filteredLog = currentProcessingLog.filter(log => log.id !== logEntry.id)
+						filteredLog.push(logEntry)
+						currentProcessingLog.length = 0
+						currentProcessingLog.push(...filteredLog)
+					}
+				}
+
+				await writeJsonFile('account_processing_log.json', currentProcessingLog)
+				console.log(`✅ Updated processing log with ${totalDigestsCreated} entries`)
 			}
-			// --- End of summarization logic ---
+			// --- End of enhanced daily digest creation logic ---
 		} catch (summaryError) {
 			console.error(`❌ Error during initial summarization for ${userInfo.email}:`, summaryError)
 			// Don't let summarization error block the redirect, but log it.

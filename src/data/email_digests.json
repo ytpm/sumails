@@ -1,79 +1,248 @@
 [
   {
-    "id": "FJe6w2nuMIbg2AvkPUfG_",
+    "id": "jp6X3LV718jtTOv-dSGSu",
     "userId": "115467879480945091792",
     "accountId": "yt@playmania.io",
-    "date": "2025-05-25",
-    "created_at": "2025-05-25T04:33:15.773Z",
+    "date": "2025-05-18",
+    "created_at": "2025-05-25T17:11:25.456Z",
     "overview": [
       "Received 1 email today",
       "0 important messages flagged",
-      "Topics: billing"
+      "Topics: newsletters"
     ],
-    "insight": "Only a billing receipt was received today, with no immediate actions required.",
+    "insight": "The inbox is calm with no pressing issues needing immediate attention.",
     "important_emails": [],
     "inbox_status": "all_clear",
     "suggestions": [
-      "Consider setting up filters for receipts to automatically categorize them into a billing folder.",
-      "If not needed, unsubscribe from automated receipt emails when possible to reduce inbox clutter.",
-      "Regularly review and archive old billing emails to maintain a clean inbox."
+      "Unsubscribe from promotional emails like Mailgun's invite if not needed.",
+      "Consider setting up filters for marketing emails to declutter the inbox.",
+      "Regularly review and archive or delete outdated newsletter emails."
     ]
   },
   {
-    "id": "4a3XySnuGRkjRKivl9OL6",
-    "userId": "104681680828637897674",
-    "accountId": "yositsafar@gmail.com",
-    "date": "2025-05-25",
-    "created_at": "2025-05-25T04:33:19.074Z",
+    "id": "ZTQDwmNzbzB3SC4XOFep7",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-19",
+    "created_at": "2025-05-25T17:11:30.100Z",
     "overview": [
-      "Received 3 emails today",
+      "Received 4 emails today",
       "2 important messages flagged",
-      "Topics: security alerts, comment approval"
+      "Topics: SaaS growth program, security updates, account login, financial report"
     ],
-    "insight": "Security alerts were present for Google accounts, requiring verification of recent activity.",
+    "insight": "You have urgent action items related to account security and a financial report request that require immediate attention.",
     "important_emails": [
       {
-        "subject": "Security alert for dreamscan.aitool@gmail.com",
-        "sender": "Google",
-        "reason": "A new app was granted access to your account; verify if this was authorized."
+        "subject": "Reset your Meta account login",
+        "sender": "LevelPlay",
+        "reason": "Important action required to ensure optimal data reporting for Meta Audience Network."
       },
       {
-        "subject": "Security alert",
-        "sender": "Google",
-        "reason": "A new app was granted access to an associated account; verify if this was authorized."
+        "subject": "כרטיס אשראי 992",
+        "sender": "Hodaya Sabag",
+        "reason": "Request for detailed financial transactions report for 2024, which needs a prompt response."
       }
     ],
     "inbox_status": "attention_needed",
     "suggestions": [
-      "Review and address security alerts promptly to ensure account safety.",
-      "Consider setting up filters for WordPress comment notifications if not managing them actively.",
-      "Unsubscribe from redundant alerts if not necessary for account monitoring."
+      "Unsubscribe from promotional emails not relevant to your current work, such as SaaS growth programs.",
+      "Set up filters to automatically sort newsletters and promotional content into separate folders.",
+      "Consider scheduling a regular time each week to address non-urgent emails, reducing day-to-day distractions."
     ]
   },
   {
-    "id": "9nMqylfdWL00pT20LC9Z3",
-    "userId": "118257279237790371687",
-    "accountId": "dreamscan.aitool@gmail.com",
-    "date": "2025-05-25",
-    "created_at": "2025-05-25T04:33:21.710Z",
+    "id": "caqPZz9kGIEVCYyVmB32m",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-20",
+    "created_at": "2025-05-25T17:11:35.648Z",
+    "overview": [
+      "Received 8 emails today",
+      "4 important messages flagged",
+      "Topics: hackathon, AI tools, company updates, billing issues"
+    ],
+    "insight": "Several billing and administrative tasks require immediate attention, particularly related to credit card transactions and missing invoices.",
+    "important_emails": [
+      {
+        "subject": "Re: כרטיס אשראי 992",
+        "sender": "Hodaya Sabag",
+        "reason": "Follow-up needed on detailed credit card transactions for 2024."
+      },
+      {
+        "subject": "פלימאנייה חוסרים",
+        "sender": "Hodaya Sabag",
+        "reason": "Missing invoices need to be addressed to prevent billing discrepancies."
+      },
+      {
+        "subject": "RE: פלימאנייה חוסרים",
+        "sender": "Hodaya Sabag",
+        "reason": "Continued discussion on missing invoices; needs resolution."
+      },
+      {
+        "subject": "The $1M hackathon just 11 days away, are you prepared?! 📢",
+        "sender": "Eric at Bolt.new",
+        "reason": "Upcoming hackathon requires preparation and could present significant opportunities."
+      }
+    ],
+    "inbox_status": "attention_needed",
+    "suggestions": [
+      "Unsubscribe from non-essential newsletters to reduce clutter.",
+      "Create a filter for administrative emails to ensure billing and transaction issues are prioritized.",
+      "Archive promotional emails after reading to maintain a cleaner inbox."
+    ]
+  },
+  {
+    "id": "zfGc9e3_86djFC06A0AAA",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-21",
+    "created_at": "2025-05-25T17:11:41.069Z",
+    "overview": [
+      "Received 8 emails today",
+      "4 important messages flagged",
+      "Topics: billing, events, account deactivation, financial transactions"
+    ],
+    "insight": "There are several financial and billing-related emails that require immediate attention to prevent potential disruptions or missed opportunities.",
+    "important_emails": [
+      {
+        "subject": "Invoice Request -30/04/2025 -Playmania LTD",
+        "sender": "ironSource [Do Not Reply]",
+        "reason": "Requires immediate action to submit an invoice within 48 hours to receive payment."
+      },
+      {
+        "subject": "AdSense account (pub-1954920203691041) has been deactivated",
+        "sender": "Google AdSense",
+        "reason": "Account deactivation may affect revenue streams; action needed to reactivate."
+      },
+      {
+        "subject": "Google AdSense: Check your recent payment",
+        "sender": "Google Payments",
+        "reason": "Important to verify receipt of payment for services rendered."
+      },
+      {
+        "subject": "הודעה בדבר כספים לא משוייכים",
+        "sender": "הפניקס לשירותך",
+        "reason": "Urgent financial issue regarding unallocated funds that needs resolution to prevent disruption."
+      }
+    ],
+    "inbox_status": "attention_needed",
+    "suggestions": [
+      "Unsubscribe from recurring event reminders to reduce clutter.",
+      "Review and possibly consolidate notifications from Stripe and Mercury to avoid duplicates.",
+      "Ensure timely response to financial emails to maintain account and payment activities."
+    ]
+  },
+  {
+    "id": "kNyJGl3b_K2eW1-Byx-Jf",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-22",
+    "created_at": "2025-05-25T17:11:45.071Z",
+    "overview": [
+      "Received 4 emails today",
+      "2 important messages flagged",
+      "Topics: AI technology, hackathon event, advertising insights, promotional offer"
+    ],
+    "insight": "There's an urgent hackathon-related email and a time-sensitive promotional offer to consider today.",
+    "important_emails": [
+      {
+        "subject": "Just announced: Hackathon prize pool! 💰",
+        "sender": "Eric at Bolt.new",
+        "reason": "The hackathon is 8 days away, and there are new details about prizes and community programs."
+      },
+      {
+        "subject": "Last call: Save 50%",
+        "sender": "Similarweb",
+        "reason": "This is a time-sensitive promotional offer for a 50% discount on an Annual Starter plan."
+      }
+    ],
+    "inbox_status": "worth_a_look",
+    "suggestions": [
+      "Unsubscribe from promotional emails if no longer interested in Similarweb offers.",
+      "Consider setting up filters for marketing emails to reduce inbox clutter.",
+      "Review and archive old newsletters from Anthropic if not actively followed."
+    ]
+  },
+  {
+    "id": "pWhkjvD8SXroDeLANG7X6",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-23",
+    "created_at": "2025-05-25T17:11:48.430Z",
+    "overview": [
+      "Received 5 emails today",
+      "2 important messages flagged",
+      "Topics: software updates, event invitations, security alerts, marketing insights"
+    ],
+    "insight": "A security alert from Google Workspace requires immediate attention for potential account vulnerabilities.",
+    "important_emails": [
+      {
+        "subject": "Regarding your account: Fix potential security issues",
+        "sender": "The Google Workspace Team",
+        "reason": "Security gaps identified, action needed to protect account."
+      },
+      {
+        "subject": "🤫 This one's just for you",
+        "sender": "Alica from Gamesforum Hamburg",
+        "reason": "Time-sensitive registration deadline for early bird ends tonight."
+      }
+    ],
+    "inbox_status": "attention_needed",
+    "suggestions": [
+      "Unsubscribe from marketing emails from Railway if not interested in weekly updates.",
+      "Consider setting filters for Gamesforum emails to manage event-related content.",
+      "Enable two-step verification for improved account security."
+    ]
+  },
+  {
+    "id": "KNq2xLr0bgUusLAblN0FB",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-24",
+    "created_at": "2025-05-25T17:11:51.646Z",
     "overview": [
       "Received 1 email today",
       "1 important message flagged",
-      "Topics: security alert"
+      "Topics: billing"
     ],
-    "insight": "A security alert from Google requires your attention to verify account access.",
+    "insight": "The inbox contains a billing receipt that should be reviewed for accuracy and record-keeping.",
     "important_emails": [
       {
-        "subject": "Security alert",
-        "sender": "Google <no-reply@accounts.google.com>",
-        "reason": "New app access granted to your Google account; check if this was authorized."
+        "subject": "Your receipt from Morphogen, Inc. #2489-8808",
+        "sender": "Morphogen, Inc.",
+        "reason": "This is a billing receipt for a subscription service, which may need to be saved for financial records."
       }
     ],
-    "inbox_status": "attention_needed",
+    "inbox_status": "worth_a_look",
     "suggestions": [
-      "Review and confirm recent app permissions for your Google account.",
-      "Consider setting up additional security measures like two-factor authentication if not already in place.",
-      "Regularly check for security alerts to ensure your account safety."
+      "Review and save the billing receipt for future reference.",
+      "Consider setting up a folder for subscription receipts to keep them organized."
+    ]
+  },
+  {
+    "id": "iAl_acKRTxmG21kjFbk7X",
+    "userId": "115467879480945091792",
+    "accountId": "yt@playmania.io",
+    "date": "2025-05-25",
+    "created_at": "2025-05-25T17:11:54.595Z",
+    "overview": [
+      "Received 2 emails today",
+      "1 important message flagged",
+      "Topics: billing, IT services"
+    ],
+    "insight": "A request for billing information requires prompt attention, but the inbox is otherwise manageable today.",
+    "important_emails": [
+      {
+        "subject": "נא לשלוח חומר למעמ 4.25",
+        "sender": "Hodaya Sabag",
+        "reason": "Request for billing information requires timely response."
+      }
+    ],
+    "inbox_status": "worth_a_look",
+    "suggestions": [
+      "Consider responding to IT services solicitations only if there's a current need.",
+      "Organize billing-related emails into a dedicated folder for easier access.",
+      "Regularly archive old correspondence to maintain a cleaner inbox."
     ]
   }
 ]

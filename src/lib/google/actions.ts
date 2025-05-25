@@ -456,6 +456,130 @@ class GmailService {
 			throw error
 		}
 	}
+
+	/**
+	 * 🚀 Fetch emails from a specific period (for initial account setup)
+	 * Uses the same efficient strategy as fetchTodaysEmailsWithContent but with configurable period
+	 */
+	async fetchEmailsFromPeriod(
+		accessToken: string, 
+		days: number = 7, // Default to 7 days for initial fetch
+		maxResults?: number
+	): Promise<EmailDataWithContent[]> {
+		try {
+			console.log(`🔍 Fetching emails from last ${days} days with full content...`)
+			
+			// Create OAuth2 client with access token
+			const oauth2Client = new google.auth.OAuth2(
+				process.env.GOOGLE_CLIENT_ID,
+				process.env.GOOGLE_CLIENT_SECRET
+			)
+			
+			oauth2Client.setCredentials({ access_token: accessToken })
+			const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
+
+			// Step 1: Fetch ALL messages with pagination
+			const allMessages: any[] = []
+			let pageToken: string | undefined
+			let requestCount = 0
+			const maxRequestsPerPage = 100 // Gmail's maximum per request
+
+			do {
+				requestCount++
+				console.log(`📄 Fetching page ${requestCount} of last ${days} days emails...`)
+				
+				const messageList = await gmail.users.messages.list({
+					userId: 'me',
+					maxResults: maxRequestsPerPage,
+					q: `newer_than:${days}d`, // Configurable period
+					pageToken,
+				})
+
+				const messages = messageList.data.messages || []
+				allMessages.push(...messages)
+				pageToken = messageList.data.nextPageToken || undefined
+
+				console.log(`📧 Page ${requestCount}: Found ${messages.length} messages (Total so far: ${allMessages.length})`)
+
+				// Safety check - if user specified maxResults, respect it
+				if (maxResults && allMessages.length >= maxResults) {
+					console.log(`⚠️ Reached specified limit of ${maxResults} emails`)
+					break
+				}
+
+				// Safety check - prevent infinite loops (max 20 pages for initial fetch)
+				if (requestCount >= 20) {
+					console.log(`⚠️ Reached maximum page limit (20 pages). Total emails: ${allMessages.length}`)
+					break
+				}
+
+			} while (pageToken)
+
+			console.log(`📧 Total messages found from last ${days} days: ${allMessages.length}`)
+
+			if (allMessages.length === 0) {
+				return []
+			}
+
+			// Limit to maxResults if specified
+			const messagesToProcess = maxResults 
+				? allMessages.slice(0, maxResults)
+				: allMessages
+
+			console.log(`📧 Processing ${messagesToProcess.length} messages`)
+
+			// Step 2: Parallel fetch all message details with rate limiting
+			console.log('⚡ Fetching full content in parallel...')
+			
+			// Add small delay between requests to avoid rate limiting
+			const fetchWithDelay = async (messageId: string, index: number) => {
+				// Small staggered delay to avoid hitting rate limits
+				if (index > 0) {
+					await new Promise(resolve => setTimeout(resolve, 30 * (index % 10))) // Stagger every 10 requests
+				}
+				
+				return gmail.users.messages.get({
+					userId: 'me',
+					id: messageId,
+					format: 'full', // Get full message content
+				})
+			}
+
+			// Step 3: Execute all requests in parallel (in batches)
+			const batchSize = 20 // Process in smaller batches to avoid rate limits
+			const emailsWithContent: EmailDataWithContent[] = []
+
+			for (let i = 0; i < messagesToProcess.length; i += batchSize) {
+				const batch = messagesToProcess.slice(i, i + batchSize)
+				console.log(`⚡ Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(messagesToProcess.length / batchSize)} (${batch.length} emails)`)
+
+				const batchPromises = batch.map((msg, index) => 
+					msg.id ? fetchWithDelay(msg.id, index) : null
+				).filter(Boolean)
+
+				const batchResults = await Promise.all(batchPromises)
+				
+				// Parse batch results
+				for (const messageResponse of batchResults) {
+					if (messageResponse?.data) {
+						const emailData = this.parseEmailDataWithContent(messageResponse.data)
+						if (emailData) {
+							emailsWithContent.push(emailData)
+						}
+					}
+				}
+
+				console.log(`✅ Batch completed. Total processed so far: ${emailsWithContent.length}`)
+			}
+
+			console.log(`🎯 Successfully parsed ${emailsWithContent.length} emails with content from last ${days} days`)
+			return emailsWithContent
+
+		} catch (error) {
+			console.error(`❌ Error fetching emails from last ${days} days:`, error)
+			throw new Error(`Failed to fetch emails from last ${days} days: ${error}`)
+		}
+	}
 }
 
 // Export singleton instance
@@ -475,3 +599,7 @@ export const fetchTodaysEmailsWithContent = (accessToken: string, maxResults?: n
 
 export const listTodaysEmailsWithContentToConsole = (accessToken: string, maxResults?: number) => 
 	gmailService.listTodaysEmailsWithContentToConsole(accessToken, maxResults)
+
+// New export for fetching emails from a specific period
+export const fetchEmailsFromPeriod = (accessToken: string, days: number = 7, maxResults?: number) => 
+	gmailService.fetchEmailsFromPeriod(accessToken, days, maxResults)
