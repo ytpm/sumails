@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readJsonFile } from '@/lib/json_handler'
 import type { EmailDigest } from '@/types/email'
-
-interface ConnectedAccount {
-	userId: string
-	email: string
-	accessToken: string
-	refreshToken: string
-	expiresAt: string
-}
-
-interface DigestWithAccount {
-	digest: EmailDigest
-	accountEmail: string
-	isExpired: boolean
-}
+import type { ConnectedAccount } from '@/types/auth'
+import type { DigestWithAccount } from '@/types/api'
 
 export async function GET(request: NextRequest) {
 	try {

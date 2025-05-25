@@ -1,24 +1,7 @@
 import { google } from 'googleapis'
 import { GoogleAuth } from 'google-auth-library'
 import type { gmail_v1 } from 'googleapis'
-
-// Define types for better type safety
-interface EmailData {
-	id: string
-	threadId: string
-	snippet: string
-	subject: string
-	from: string
-	date: string
-	labels: string[]
-}
-
-// Enhanced email interface with full content
-interface EmailDataWithContent extends EmailData {
-	textContent?: string
-	htmlContent?: string
-	bodyPreview?: string // Best available content preview
-}
+import type { EmailData, EmailDataWithContent } from '@/types/google'
 
 class GmailService {
 	private auth: GoogleAuth

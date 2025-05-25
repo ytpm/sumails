@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server'
 import { readJsonFile } from '@/lib/json_handler'
-
-interface AccountProcessingLog {
-	id: string
-	account_email: string
-	userId: string
-	date: string
-	last_processed_at: string
-	emails_fetched: number
-	emails_summarized: number
-	digest_id?: string
-	status: 'success' | 'failed' | 'no_new_emails'
-}
+import type { AccountProcessingLog } from '@/types/api'
 
 export async function GET() {
 	try {

@@ -6,19 +6,7 @@ import { Button } from '@/components/ui/button'
 import { RefreshCw, Mail, AlertCircle, Calendar, Package, Megaphone, CheckCircle, Clock, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import type { EmailDigest } from '@/types/email'
-
-interface TodayDigestWithAccount {
-	digest: EmailDigest
-	accountEmail: string
-	isExpired: boolean
-}
-
-interface TodayDigestsResponse {
-	success: boolean
-	date: string
-	digests: TodayDigestWithAccount[]
-	total: number
-}
+import type { TodayDigestWithAccount, TodayDigestsResponse } from '@/types/api'
 
 // Component for individual highlight items
 function HighlightItem({ highlight }: { highlight: { subject: string; sender: string; reason: string } }) {

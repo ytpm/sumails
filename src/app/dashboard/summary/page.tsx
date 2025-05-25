@@ -8,19 +8,7 @@ import { Label } from '@/components/ui/label'
 import { RefreshCw, Mail, AlertCircle, Calendar, Package, Megaphone, CheckCircle, Clock, ChevronDown, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import type { EmailDigest } from '@/types/email'
-
-interface DigestWithAccount {
-	digest: EmailDigest
-	accountEmail: string
-	isExpired: boolean
-}
-
-interface DigestsResponse {
-	success: boolean
-	date: string
-	digests: DigestWithAccount[]
-	total: number
-}
+import type { DigestWithAccount, DigestsResponse } from '@/types/api'
 
 // Component for individual highlight items
 function HighlightItem({ highlight }: { highlight: { subject: string; sender: string; reason: string } }) {

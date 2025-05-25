@@ -5,19 +5,7 @@ import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
 import { summarizeAndStoreEmails } from '@/lib/openai/summarizeEmails'
 import { writeJsonFile, readJsonFile } from '@/lib/json_handler'
 import type { GmailMessageWithContent, SummarizedMessage, EmailDigest } from '@/types/email'
-
-// Define AccountProcessingLog interface
-interface AccountProcessingLog {
-	id: string
-	account_email: string
-	userId: string
-	date: string // YYYY-MM-DD
-	last_processed_at: string // ISO timestamp
-	emails_fetched: number
-	emails_summarized: number
-	digest_id?: string
-	status: 'success' | 'failed' | 'no_new_emails'
-}
+import type { AccountProcessingLog } from '@/types/api'
 
 export async function GET(request: NextRequest) {
 	try {

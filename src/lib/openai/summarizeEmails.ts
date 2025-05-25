@@ -2,73 +2,21 @@ import OpenAI from 'openai'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { readJsonFile, writeJsonFile } from '@/lib/json_handler'
+import type { EmailDigest, SummarizedMessage } from '@/types/email'
+import type { UnsummarizedEmail, UnsummarizedDebugData } from '@/types/google'
 
-// --- Zod Schema Definitions ---
-export const EmailSummaryGeneratedContentSchema = z.object({
-	overview: z.array(z.string()).min(3).max(5).describe('3 to 5 short bullet points about inbox activity'),
-	insight: z.string().describe('One short sentence AI assessment of the inbox'),
-	important_emails: z.array(
-		z.object({
-			subject: z.string().describe('The subject of the important email'),
-			sender: z.string().describe('The sender of the important email'),
-			reason: z.string().describe('Why this email is important'),
-		})
-	).max(5).describe('Up to 5 important emails with subject, sender, and reason'),
-	inbox_status: z.enum(['attention_needed', 'worth_a_look', 'all_clear']).describe('The general state of the inbox based on email content'),
-	suggestions: z.array(z.string()).max(3).optional().describe('Up to 3 optional inbox cleanup suggestions'),
+// Zod schema for validating OpenAI response
+const EmailSummaryGeneratedContentSchema = z.object({
+	overview: z.array(z.string()),
+	insight: z.string(),
+	important_emails: z.array(z.object({
+		subject: z.string(),
+		sender: z.string(),
+		reason: z.string()
+	})),
+	inbox_status: z.enum(['attention_needed', 'worth_a_look', 'all_clear']),
+	suggestions: z.array(z.string()).optional()
 })
-
-// --- Type Definitions ---
-interface UnsummarizedEmail {
-	id: string
-	subject: string
-	snippet: string
-	from: string
-	internalDate?: string
-	date?: string
-	// Enhanced content fields
-	textContent?: string
-	htmlContent?: string
-	bodyPreview?: string
-}
-
-interface SummarizedMessage {
-	id: string
-	accountId: string
-	summarized_at: string
-}
-
-interface EmailDigest {
-	id: string
-	userId: string
-	accountId: string
-	date: string
-	created_at: string
-	
-	// Fields from the new AI output
-	overview: string[]
-	insight: string
-	important_emails: Array<{
-		subject: string
-		sender: string
-		reason: string
-	}>
-	inbox_status: 'attention_needed' | 'worth_a_look' | 'all_clear'
-	suggestions?: string[]
-}
-
-interface UnsummarizedDebugData {
-	userId: string
-	accountEmail: string
-	timestamp: string
-	messages: UnsummarizedEmail[]
-	contentStats?: {
-		totalEmails: number
-		withTextContent: number
-		withHtmlContent: number
-		avgContentLength: number
-	}
-}
 
 // --- Initialize OpenAI Client ---
 const openai = new OpenAI({

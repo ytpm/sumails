@@ -7,19 +7,14 @@ import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-
-interface ConnectedAccount {
-	email: string
-	userId: string
-	isExpired: boolean
-}
+import type { ConnectedAccountDisplay } from '@/types/api'
 
 export default function ConnectedEmailsPage() {
-	const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([])
+	const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccountDisplay[]>([])
 	const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
 	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
 	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
-	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccount | null>(null)
+	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccountDisplay | null>(null)
 	
 	const searchParams = useSearchParams()
 

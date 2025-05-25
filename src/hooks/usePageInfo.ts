@@ -1,10 +1,6 @@
 import { usePathname } from 'next/navigation'
 import PATHS from '@/utils/paths'
-
-interface PageInfo {
-	title: string
-	description: string
-}
+import type { PageInfo } from '@/types/hooks'
 
 export function usePageInfo(): PageInfo {
 	const pathname = usePathname()
