@@ -31,5 +31,38 @@
     "emails_summarized": 1,
     "digest_id": "gmYsLaSjWpupDe0lQAXo-",
     "status": "success"
+  },
+  {
+    "id": "115467879480945091792_yt_playmania_io_2025_05_25",
+    "account_email": "yt@playmania.io",
+    "userId": "115467879480945091792",
+    "date": "2025-05-25",
+    "last_processed_at": "2025-05-25T04:33:11.366Z",
+    "emails_fetched": 1,
+    "emails_summarized": 1,
+    "digest_id": "FJe6w2nuMIbg2AvkPUfG_",
+    "status": "success"
+  },
+  {
+    "id": "104681680828637897674_yositsafar_gmail_com_2025_05_25",
+    "account_email": "yositsafar@gmail.com",
+    "userId": "104681680828637897674",
+    "date": "2025-05-25",
+    "last_processed_at": "2025-05-25T04:33:15.779Z",
+    "emails_fetched": 3,
+    "emails_summarized": 3,
+    "digest_id": "4a3XySnuGRkjRKivl9OL6",
+    "status": "success"
+  },
+  {
+    "id": "118257279237790371687_dreamscan_aitool_gmail_com_2025_05_25",
+    "account_email": "dreamscan.aitool@gmail.com",
+    "userId": "118257279237790371687",
+    "date": "2025-05-25",
+    "last_processed_at": "2025-05-25T04:33:19.080Z",
+    "emails_fetched": 1,
+    "emails_summarized": 1,
+    "digest_id": "9nMqylfdWL00pT20LC9Z3",
+    "status": "success"
   }
 ]

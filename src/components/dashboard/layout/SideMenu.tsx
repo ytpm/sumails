@@ -17,6 +17,11 @@ const navigationItems = [
 		disabled: false
 	},
 	{
+		href: PATHS.DASHBOARD.SUMMARY,
+		label: 'Summary',
+		disabled: false
+	},
+	{
 		href: PATHS.DASHBOARD.EMAIL_ANALYTICS,
 		label: 'Email analytics',
 		disabled: false

@@ -5,16 +5,17 @@ import { readJsonFile, writeJsonFile } from '@/lib/json_handler'
 
 // --- Zod Schema Definitions ---
 export const EmailSummaryGeneratedContentSchema = z.object({
-	status: z.enum(['attention_needed', 'worth_a_look', 'all_clear']).describe('The general state of the inbox'),
-	overview: z.array(z.string()).describe('3 short bullet points about inbox activity'),
-	insight: z.string().describe('One-sentence AI assessment of the inbox'),
-	highlights: z.array(
+	overview: z.array(z.string()).min(3).max(5).describe('3 to 5 short bullet points about inbox activity'),
+	insight: z.string().describe('One short sentence AI assessment of the inbox'),
+	important_emails: z.array(
 		z.object({
 			subject: z.string().describe('The subject of the important email'),
-			from: z.string().describe('The sender of the important email'),
+			sender: z.string().describe('The sender of the important email'),
+			reason: z.string().describe('Why this email is important'),
 		})
-	).describe('Up to 5 important emails with subject and sender'),
-	suggestion: z.string().optional().describe('Optional inbox cleanup suggestion'),
+	).max(5).describe('Up to 5 important emails with subject, sender, and reason'),
+	inbox_status: z.enum(['attention_needed', 'worth_a_look', 'all_clear']).describe('The general state of the inbox based on email content'),
+	suggestions: z.array(z.string()).max(3).optional().describe('Up to 3 optional inbox cleanup suggestions'),
 })
 
 // --- Type Definitions ---
@@ -42,15 +43,18 @@ interface EmailDigest {
 	userId: string
 	accountId: string
 	date: string
-	status: 'attention_needed' | 'worth_a_look' | 'all_clear'
+	created_at: string
+	
+	// Fields from the new AI output
 	overview: string[]
 	insight: string
-	highlights: Array<{
+	important_emails: Array<{
 		subject: string
-		from: string
+		sender: string
+		reason: string
 	}>
-	suggestion?: string
-	created_at: string
+	inbox_status: 'attention_needed' | 'worth_a_look' | 'all_clear'
+	suggestions?: string[]
 }
 
 interface UnsummarizedDebugData {
@@ -100,15 +104,35 @@ export async function summarizeAndStoreEmails(userId?: string, accountEmail?: st
 		const actualUserId = userId || latestDebugEntry?.userId || 'user_unknown'
 		const actualAccountEmail = accountEmail || latestDebugEntry?.accountEmail || 'unknown@example.com'
 		
-		console.log(`🔍 Processing for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
+		console.log(`🚀 Starting summarizeAndStoreEmails for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
 
-		// Flatten all messages from all accounts
-		const allEmails: UnsummarizedEmail[] = []
-		for (const accountData of debugData) {
-			allEmails.push(...accountData.messages)
+		// Step 1: Load unsummarized emails for this account from debug data
+		console.log('📂 Loading unsummarized debug data...')
+		const accountData = debugData.find(entry => 
+			entry.userId === actualUserId && entry.accountEmail === actualAccountEmail
+		)
+
+		if (!accountData) {
+			console.log(`❌ No debug data found for userId: ${actualUserId}, accountEmail: ${actualAccountEmail}`)
+			return {
+				success: false,
+				message: `No unsummarized emails found for ${actualAccountEmail}. Please fetch emails first.`
+			}
 		}
 
-		console.log(`📧 Found ${allEmails.length} total emails across ${debugData.length} accounts`)
+		console.log(`✅ Found debug data for ${actualAccountEmail} with ${accountData.messages.length} emails`)
+		const allEmails = accountData.messages || []
+
+		if (allEmails.length === 0) {
+			console.log('📭 No emails found to process')
+			return {
+				success: true,
+				message: 'No emails found to process',
+				processedEmails: 0
+			}
+		}
+
+		console.log(`📧 Found ${allEmails.length} total emails for processing`)
 
 		// Step 2: Load previously summarized message IDs
 		console.log('📂 Loading previously summarized message IDs...')
@@ -158,43 +182,58 @@ Content: ${contentValue}`
 			.join('\n\n---\n\n')
 
 		// Step 5: Create enhanced prompt for OpenAI
-		const systemPrompt = `You are an AI email assistant summarizing today's email activity. Given the full content of recent emails, perform the following:
+		const systemPrompt = `You are an AI email assistant helping the user manage their Gmail inbox. You have access to the full content of all emails received today. Your job is to make sense of the inbox, surface what's important, and reduce the user's cognitive load.
 
-1. Determine the general state of the inbox. Choose one of the following values:
-   - "attention_needed": critical or urgent content like security alerts, payment failures, or requests
-   - "worth_a_look": some messages may need a glance or follow-up, but nothing urgent
-   - "all_clear": no urgent content, mostly newsletters, promos, or routine updates
+Perform the following:
 
-2. Generate a concise inbox overview as a list of 3 short bullet points:
-   - 📬 Number of emails received today (e.g., "28 emails today")
-   - 🔥 Number of flagged or actionable emails (e.g., "2 urgent messages")
-   - 💬 Topics or categories observed (e.g., "Topics: billing, platform updates, newsletters")
+1. **Overview (bullet points)**
+   Create 3 to 5 short bullet points that give a quick overview of today's inbox activity. Include:
+   - Number of emails received (e.g., "Received 28 emails today")
+   - Number of important or actionable messages (e.g., "2 important messages flagged")
+   - Topics or categories observed (e.g., "Topics: billing, platform updates, newsletters")
 
-3. Provide a one-sentence AI insight:
-   - Summarize your assessment of the inbox (e.g., "Security alerts were present, but no immediate action needed.")
+2. **Insight**
+   Write one short sentence summarizing your assessment of today's inbox. Be specific and helpful. (e.g., "Security alerts were present, but no immediate action is needed.")
 
-4. List up to 5 highlights (subject and sender):
-   - Focus only on clearly important or actionable emails
+3. **Important Emails**
+   Highlight up to 5 emails that deserve attention. Prioritize:
+   - Urgent action items
+   - Security alerts, billing issues
+   - Replies needing follow-up
+   - Anything time-sensitive or critical
 
-5. Optionally, return one inbox cleanup suggestion if relevant:
-   - Suggest unsubscribing from up to 3 promotional senders
-   - Format the string like: "Consider unsubscribing from X, Y and Z (if many. State the name of the sender) to reduce clutter."
+   For each, return:
+   - \`subject\`
+   - \`sender\`
+   - \`reason\` (why it's important)
 
-Return a JSON object with this structure:
+4. **Inbox Health Status**
+   Classify the inbox into one of the following:
+   - \`"attention_needed"\`: contains urgent or important emails
+   - \`"worth_a_look"\`: moderate relevance, some things to review
+   - \`"all_clear"\`: nothing important today
+
+5. **Suggestions for Cleanup**
+   Suggest up to 3 actions the user can take to reduce clutter or improve inbox hygiene. Focus on patterns in senders, email types, or repeated content. (e.g., "Unsubscribe from Bolt, GetTaxi, and Uber Eats promotions")
+
+Return your output in the following JSON format:
+
+\`\`\`json
 {
-  "status": "attention_needed" | "worth_a_look" | "all_clear",
-  "overview": [
-    "📬 28 emails today",
-    "🔥 2 important messages",
-    "💬 Topics: security alerts, payments, newsletters"
+  "overview": ["string", "string", "string"],
+  "insight": "string",
+  "important_emails": [
+    {
+      "subject": "string",
+      "sender": "string",
+      "reason": "string"
+    }
   ],
-  "insight": "Security alerts need review, but nothing time-sensitive.",
-  "highlights": [
-    { "subject": "Reset your password", "from": "Google" },
-    { "subject": "Payment failed for invoice #3389", "from": "Stripe" }
-  ],
-  "suggestion": "Consider unsubscribing from bolt.new, Gett Taxi, and Vibe to reduce clutter."
-}`
+  "inbox_status": "attention_needed" | "worth_a_look" | "all_clear",
+  "suggestions": ["string", "string", "string"]
+}
+\`\`\`
+`
 
 		const userPrompt = `Here are today's emails with full content to analyze:\n\n${emailsMarkdown}`
 
@@ -226,25 +265,36 @@ Return a JSON object with this structure:
 		// Step 7: Create digest object
 		const digestId = nanoid()
 		const currentTimestamp = new Date().toISOString()
-		
+
 		const newDigest: EmailDigest = {
 			id: digestId,
 			userId: actualUserId,
 			accountId: actualAccountEmail,
 			date: currentTimestamp.split('T')[0], // ISO date string (YYYY-MM-DD)
-			status: validatedContent.status,
+			created_at: currentTimestamp,
+
+			// Map new fields from validatedContent
 			overview: validatedContent.overview,
 			insight: validatedContent.insight,
-			highlights: validatedContent.highlights,
-			suggestion: validatedContent.suggestion,
-			created_at: currentTimestamp
+			important_emails: validatedContent.important_emails,
+			inbox_status: validatedContent.inbox_status,
+			suggestions: validatedContent.suggestions,
 		}
 
 		// Step 8: Load and update email_digests.json
 		console.log('💾 Updating email_digests.json...')
 		const existingDigests: EmailDigest[] = await readJsonFile('email_digests.json')
+		console.log(`📂 Loaded ${existingDigests.length} existing digests`)
 		const updatedDigests = [...existingDigests, newDigest]
-		await writeJsonFile('email_digests.json', updatedDigests)
+		console.log(`📝 About to save ${updatedDigests.length} digests to email_digests.json`)
+		
+		try {
+			await writeJsonFile('email_digests.json', updatedDigests)
+			console.log('✅ Successfully saved digest to email_digests.json')
+		} catch (error) {
+			console.error('❌ Failed to save digest to email_digests.json:', error)
+			throw error
+		}
 
 		// Step 9: Update summarized_messages.json
 		console.log('💾 Updating summarized_messages.json...')
@@ -254,17 +304,24 @@ Return a JSON object with this structure:
 			summarized_at: currentTimestamp
 		}))
 		
+		console.log(`📝 Creating ${newSummarizedMessages.length} new summarized message records`)
 		const updatedSummarizedMessages = [...summarizedMessages, ...newSummarizedMessages]
-		await writeJsonFile('summarized_messages.json', updatedSummarizedMessages)
+		console.log(`📝 About to save ${updatedSummarizedMessages.length} summarized messages`)
+		
+		try {
+			await writeJsonFile('summarized_messages.json', updatedSummarizedMessages)
+			console.log('✅ Successfully saved summarized messages to summarized_messages.json')
+		} catch (error) {
+			console.error('❌ Failed to save summarized messages:', error)
+			throw error
+		}
 
 		console.log('✅ Email summarization completed successfully!')
 		console.log(`📊 Digest created with ID: ${digestId}`)
 		console.log(`📧 Processed ${unsummarizedEmails.length} emails`)
-		console.log(`📊 Status: ${validatedContent.status}`)
-		console.log(`📋 Overview: ${validatedContent.overview.join(', ')}`)
-		console.log(`💡 Insight: ${validatedContent.insight}`)
-		console.log(`⭐ Highlights: ${validatedContent.highlights.length} important emails`)
-		console.log(`💡 Suggestion: ${validatedContent.suggestion || 'None'}`)
+		console.log(`📊 Inbox Status: ${validatedContent.inbox_status}`)
+		console.log(`⭐ Important Emails: ${validatedContent.important_emails.length}`)
+		console.log(`💡 Suggestions: ${validatedContent.suggestions?.join(', ') || 'None'}`)
 
 		return {
 			success: true,

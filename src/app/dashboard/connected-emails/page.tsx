@@ -4,21 +4,9 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ContentView from '@/components/dashboard/layout/ContentView'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { GmailMessage } from '@/types/email'
-
-interface EmailData {
-	id: string
-	threadId: string
-	snippet: string
-	subject: string
-	from: string
-	date: string
-	labels: string[]
-}
 
 interface ConnectedAccount {
 	email: string
@@ -28,11 +16,7 @@ interface ConnectedAccount {
 
 export default function ConnectedEmailsPage() {
 	const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([])
-	const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
-	const [accessToken, setAccessToken] = useState<string | null>(null)
 	const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
-	const [isAISummarizing, setIsAISummarizing] = useState(false)
-	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 	const [disconnectingAccount, setDisconnectingAccount] = useState<string | null>(null)
 	const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
 	const [accountToDisconnect, setAccountToDisconnect] = useState<ConnectedAccount | null>(null)
@@ -43,10 +27,15 @@ export default function ConnectedEmailsPage() {
 		// Check if we just connected an account
 		const connected = searchParams.get('connected')
 		const connectedEmail = searchParams.get('email')
+		const initialSummaryAttempted = searchParams.get('initial_summary_attempted')
 		
 		if (connected === 'success' && connectedEmail) {
-			toast.success(`Successfully connected ${connectedEmail}!`, {
-				description: 'You can now select this account to fetch emails.',
+			const summaryMessage = initialSummaryAttempted === 'true' 
+				? 'Account connected and initial email summary attempted!'
+				: 'Account connected successfully!'
+			
+			toast.success(`${summaryMessage}`, {
+				description: `${connectedEmail} is now connected. Check the Today's Summary page for email insights.`,
 			})
 			// Clear URL parameters
 			window.history.replaceState({}, '', '/dashboard/connected-emails')
@@ -69,13 +58,10 @@ export default function ConnectedEmailsPage() {
 			
 			if (data.accounts && data.accounts.length > 0) {
 				setConnectedAccounts(data.accounts)
-				// Set user ID to the first one found (for credential loading)
-				setCurrentUserId(data.accounts[0].userId)
 				console.log(`📧 Loaded ${data.accounts.length} connected accounts`)
 			} else {
 				// No accounts found
 				setConnectedAccounts([])
-				setCurrentUserId('user_123') // Fallback for new users
 				console.log('📧 No connected accounts found')
 			}
 		} catch (error) {
@@ -83,49 +69,8 @@ export default function ConnectedEmailsPage() {
 			toast.error('Failed to load connected accounts', {
 				description: 'Please try refreshing the page.',
 			})
-			setCurrentUserId('user_123') // Fallback user ID
 		} finally {
 			setIsLoadingAccounts(false)
-		}
-	}
-
-	const loadAccountCredentials = async (email: string) => {
-		try {
-			// Find the user ID for this specific email
-			const account = connectedAccounts.find(acc => acc.email === email)
-			if (!account) {
-				console.error('❌ Account not found in connected accounts')
-				toast.error('Account not found')
-				return
-			}
-			
-			const response = await fetch(`/api/auth/accounts?userId=${account.userId}&email=${email}`)
-			const data = await response.json()
-			
-			if (data.accessToken) {
-				setAccessToken(data.accessToken)
-				setSelectedAccount(email)
-				setCurrentUserId(account.userId) // Update current user ID
-				console.log(`🔑 Loaded credentials for ${email} (userId: ${account.userId})`)
-			} else {
-				console.error('❌ Failed to load credentials:', data.error)
-				toast.error('Failed to load account credentials')
-			}
-		} catch (error) {
-			console.error('❌ Error loading credentials:', error)
-			toast.error('Error loading account credentials')
-		}
-	}
-
-	const handleSelectAccount = (email: string) => {
-		if (selectedAccount === email) {
-			// Deselect if already selected
-			setSelectedAccount(null)
-			setAccessToken(null)
-			console.log(`🔓 Deselected account: ${email}`)
-		} else {
-			// Select the account
-			loadAccountCredentials(email)
 		}
 	}
 
@@ -162,12 +107,6 @@ export default function ConnectedEmailsPage() {
 			const data = await response.json()
 
 			if (response.ok) {
-				// If the disconnected account was selected, clear selection
-				if (selectedAccount === accountToDisconnect.email) {
-					setSelectedAccount(null)
-					setAccessToken(null)
-				}
-				
 				// Reload accounts to reflect the change
 				await loadConnectedAccounts()
 				
@@ -221,72 +160,6 @@ export default function ConnectedEmailsPage() {
 		}
 	}
 
-	const handleEnhancedAISummarization = async () => {
-		if (!accessToken || !selectedAccount || !currentUserId) {
-			toast.error('No account selected', {
-				description: 'Please select an account first.',
-			})
-			return
-		}
-
-		setIsAISummarizing(true)
-		try {
-			console.log('🚀 Starting enhanced email summarization with full content...')
-			
-			const response = await fetch('/api/emails/summarize', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					accessToken,
-					accountEmail: selectedAccount,
-					userId: currentUserId,
-				}),
-			})
-
-			const data = await response.json()
-			
-			if (data.success) {
-				console.log('✅ Enhanced email summarization successful!')
-				console.log(`📊 Emails fetched: ${data.emailsFetched}`)
-				console.log(`📧 Emails summarized: ${data.emailsSummarized}`)
-				console.log(`📊 Digest ID: ${data.digestId}`)
-				
-				// Log content statistics if available
-				if (data.contentStats) {
-					console.log(`📊 Content quality:`, data.contentStats)
-				}
-				
-				if (data.alreadyProcessed) {
-					toast.info('Account already processed today!', {
-						description: `${selectedAccount} was processed earlier today. Check email_digests.json for results.`,
-					})
-				} else {
-					const contentInfo = data.contentStats 
-						? `${data.contentStats.withTextContent} with full text, ${data.contentStats.withHtmlContent} with HTML`
-						: 'with enhanced content'
-					
-					toast.success('Enhanced email summarization complete!', {
-						description: `Analyzed ALL ${data.emailsFetched} emails from today (${contentInfo}). Check email_digests.json for AI insights.`,
-					})
-				}
-			} else {
-				console.error('❌ Enhanced email summarization failed:', data.error)
-				toast.error('Enhanced email summarization failed', {
-					description: data.error || 'Please try again.',
-				})
-			}
-		} catch (error) {
-			console.error('❌ Error in enhanced email summarization:', error)
-			toast.error('Error in enhanced email summarization', {
-				description: 'Please check your connection and try again.',
-			})
-		} finally {
-			setIsAISummarizing(false)
-		}
-	}
-
 	return (
 		<ContentView>
 			{/* Connected Accounts Section */}
@@ -318,7 +191,6 @@ export default function ConnectedEmailsPage() {
 									</div>
 								</div>
 								<div className="flex items-center gap-2">
-									<div className="h-8 bg-muted-foreground/30 rounded w-16" />
 									<div className="h-8 bg-muted-foreground/30 rounded w-20" />
 								</div>
 							</div>
@@ -338,11 +210,7 @@ export default function ConnectedEmailsPage() {
 						{connectedAccounts.map((account) => (
 							<div
 								key={account.email}
-								className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-									selectedAccount === account.email
-										? 'bg-primary/10 border-primary'
-										: 'bg-muted/50 border-border hover:bg-muted'
-								}`}
+								className="flex items-center justify-between p-4 rounded-lg border bg-muted/50 border-border hover:bg-muted"
 							>
 								<div className="flex items-center gap-3">
 									<div className={`w-3 h-3 rounded-full ${
@@ -351,77 +219,25 @@ export default function ConnectedEmailsPage() {
 									<div>
 										<p className="font-medium text-foreground">{account.email}</p>
 										<p className="text-sm text-muted-foreground">
-											{account.isExpired ? 'Token expired' : 'Active'}
-											{selectedAccount === account.email && ' • Selected'}
+											{account.isExpired ? 'Token expired - please reconnect' : 'Active'}
 										</p>
 									</div>
 								</div>
-								<div className="flex items-center gap-2">
-									<Button
-										onClick={() => handleSelectAccount(account.email)}
-										variant={selectedAccount === account.email ? "default" : "outline"}
-										size="sm"
-										disabled={account.isExpired}
-										className="shadow-sm"
-									>
-										{selectedAccount === account.email ? '✓ Selected' : 'Select'}
-									</Button>
-									<Button
-										onClick={() => handleDisconnectClick(account.email)}
-										variant="outline"
-										size="sm"
-										disabled={disconnectingAccount === account.email}
-										className="shadow-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-									>
-										{disconnectingAccount === account.email ? '🔄' : '🗑️ Disconnect'}
-									</Button>
-								</div>
+								<Button
+									onClick={() => handleDisconnectClick(account.email)}
+									variant="outline"
+									size="sm"
+									disabled={disconnectingAccount === account.email}
+									className="shadow-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+								>
+									{disconnectingAccount === account.email ? '🔄' : <Trash2 className="w-4 h-4 mr-2" />}
+									{disconnectingAccount === account.email ? 'Disconnecting...' : 'Disconnect'}
+								</Button>
 							</div>
 						))}
 					</div>
 				)}
 			</div>
-
-			{/* Enhanced AI Summarization Section */}
-			{selectedAccount && accessToken && (
-				<div className="mb-8 p-6 bg-card border border-border rounded-lg shadow-sm">
-					<h2 className="text-xl font-semibold mb-4 text-card-foreground">
-						📧 Enhanced AI Email Analysis for {selectedAccount}
-					</h2>
-					
-					<div className="space-y-4">
-						<div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-							<h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-								🚀 What This Does
-							</h3>
-							<ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-								<li>• Fetches <strong>ALL today's emails</strong> with full content (not just snippets)</li>
-								<li>• Uses advanced AI to analyze themes, patterns, and priorities</li>
-								<li>• Identifies important emails and actionable items</li>
-								<li>• Provides personalized inbox management suggestions</li>
-								<li>• Saves results to email_digests.json for review</li>
-							</ul>
-						</div>
-
-						{/* Enhanced AI Summarization Button */}
-						<Button
-							onClick={handleEnhancedAISummarization}
-							disabled={isAISummarizing}
-							size="lg"
-							className="shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
-						>
-							{isAISummarizing ? (
-								<>
-									<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-									🤖 Analyzing emails with AI...
-								</>
-							) : (
-								'🤖 Analyze Today\'s Emails with AI'
-							)}
-						</Button>
-					</div>
-				</div>
-			)}
 
 			{/* Confirmation Dialog */}
 			<ConfirmationDialog

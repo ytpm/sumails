@@ -5,23 +5,7 @@ import ContentView from '@/components/dashboard/layout/ContentView'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Mail, AlertCircle, Calendar, Package, Megaphone, CheckCircle, Clock, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
-
-interface EmailDigest {
-	id: string
-	userId: string
-	accountId: string
-	date: string
-	status?: 'attention_needed' | 'worth_a_look' | 'all_clear'
-	overview?: string[]
-	insight?: string
-	summary?: string
-	highlights: Array<{
-		subject: string
-		from: string
-	}>
-	suggestion?: string
-	created_at: string
-}
+import type { EmailDigest } from '@/types/email'
 
 interface TodayDigestWithAccount {
 	digest: EmailDigest
@@ -37,10 +21,10 @@ interface TodayDigestsResponse {
 }
 
 // Component for individual highlight items
-function HighlightItem({ highlight }: { highlight: { subject: string; from: string } }) {
-	const getIconForHighlight = (subject: string, from: string) => {
+function HighlightItem({ highlight }: { highlight: { subject: string; sender: string; reason: string } }) {
+	const getIconForHighlight = (subject: string, sender: string) => {
 		const subjectLower = subject.toLowerCase()
-		const fromLower = from.toLowerCase()
+		const senderLower = sender.toLowerCase()
 		
 		if (subjectLower.includes('urgent') || subjectLower.includes('action required') || subjectLower.includes('important')) {
 			return <AlertCircle className="w-4 h-4 text-red-500" />
@@ -51,7 +35,7 @@ function HighlightItem({ highlight }: { highlight: { subject: string; from: stri
 		if (subjectLower.includes('order') || subjectLower.includes('shipping') || subjectLower.includes('delivery')) {
 			return <Package className="w-4 h-4 text-green-500" />
 		}
-		if (fromLower.includes('no-reply') || subjectLower.includes('newsletter') || subjectLower.includes('promo')) {
+		if (senderLower.includes('no-reply') || subjectLower.includes('newsletter') || subjectLower.includes('promo')) {
 			return <Megaphone className="w-4 h-4 text-purple-500" />
 		}
 		if (subjectLower.includes('confirm') || subjectLower.includes('complete') || subjectLower.includes('success')) {
@@ -63,13 +47,16 @@ function HighlightItem({ highlight }: { highlight: { subject: string; from: stri
 
 	return (
 		<div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-			{getIconForHighlight(highlight.subject, highlight.from)}
+			{getIconForHighlight(highlight.subject, highlight.sender)}
 			<div className="flex-1 min-w-0">
 				<p className="font-medium text-sm text-foreground leading-tight mb-1">
 					{highlight.subject}
 				</p>
-				<p className="text-xs text-muted-foreground truncate">
-					{highlight.from}
+				<p className="text-xs text-muted-foreground truncate mb-1">
+					From: {highlight.sender}
+				</p>
+				<p className="text-xs text-blue-600 dark:text-blue-400">
+					Reason: {highlight.reason}
 				</p>
 			</div>
 		</div>
@@ -92,7 +79,7 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 		if (contentRef.current) {
 			setContentHeight(contentRef.current.scrollHeight)
 		}
-	}, [digest.highlights, digest.suggestion])
+	}, [digest.important_emails, digest.suggestions, isExpanded])
 
 	// Get status styling and icon
 	const getStatusConfig = (status: string | undefined) => {
@@ -132,7 +119,7 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 		}
 	}
 
-	const statusConfig = getStatusConfig(digest.status)
+	const statusConfig = getStatusConfig(digest.inbox_status)
 	
 	return (
 		<div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
@@ -154,11 +141,11 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 							{statusConfig.icon} {statusConfig.text}
 						</span>
 
-						{digest.highlights.length > 0 && (
+						{digest.important_emails.length > 0 && (
 							<span className={`px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-xs font-medium rounded-full transition-all duration-200 ${
 								isExpanded ? 'scale-105' : 'scale-100'
 							}`}>
-								{digest.highlights.length} highlight{digest.highlights.length !== 1 ? 's' : ''}
+								{digest.important_emails.length} important
 							</span>
 						)}
 					</div>
@@ -189,7 +176,7 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 						<h4 className="text-sm font-medium text-foreground flex items-center gap-2">
 							📊 Overview
 						</h4>
-						{!isExpanded && digest.highlights.length > 0 && (
+						{!isExpanded && digest.important_emails.length > 0 && (
 							<span className="text-xs text-muted-foreground transition-opacity duration-200">
 								Click to view details
 							</span>
@@ -241,16 +228,16 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 					isExpanded ? 'border-border/50 opacity-100' : 'border-transparent opacity-0'
 				}`}>
 					<div className="pt-4 space-y-4">
-						{/* Highlights */}
-						{digest.highlights.length > 0 && (
+						{/* Important Emails */}
+						{digest.important_emails.length > 0 && (
 							<div className={`transform transition-all duration-300 ease-in-out ${
 								isExpanded ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
 							}`}>
 								<h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-									🔥 Highlights ({digest.highlights.length})
+									🔥 Important Emails ({digest.important_emails.length})
 								</h4>
 								<div className="space-y-2">
-									{digest.highlights.slice(0, 5).map((highlight, index) => (
+									{digest.important_emails.slice(0, 5).map((highlight, index) => (
 										<div 
 											key={index}
 											className={`transform transition-all duration-200 ease-in-out ${
@@ -267,8 +254,8 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 							</div>
 						)}
 
-						{/* Suggestion */}
-						{digest.suggestion && (
+						{/* Suggestions for Cleanup */}
+						{digest.suggestions && digest.suggestions.length > 0 && (
 							<div 
 								className={`transform transition-all duration-300 ease-in-out ${
 									isExpanded ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
@@ -278,12 +265,16 @@ function AccountSummaryCard({ digestWithAccount }: { digestWithAccount: TodayDig
 								}}
 							>
 								<div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-									<h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
-										💡 Suggestion
+									<h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+										💡 Suggestions for Cleanup
 									</h4>
-									<p className="text-sm text-blue-800 dark:text-blue-200">
-										{digest.suggestion}
-									</p>
+									<ul className="list-disc list-inside space-y-1">
+										{digest.suggestions.map((suggestion, index) => (
+											<li key={index} className="text-sm text-blue-800 dark:text-blue-200">
+												{suggestion}
+											</li>
+										))}
+									</ul>
 								</div>
 							</div>
 						)}
@@ -351,11 +342,23 @@ function NoDataCard() {
 }
 
 // Summary header component
-function SummaryHeader({ date, onRefresh, isRefreshing }: { 
+interface SummaryHeaderProps {
 	date: string
-	onRefresh: () => void 
+	onRefresh: () => void
 	isRefreshing: boolean
-}) {
+	onFetchToday?: () => void
+	isFetchingToday?: boolean
+	canFetchToday?: boolean
+}
+
+function SummaryHeader({ 
+	date, 
+	onRefresh, 
+	isRefreshing, 
+	onFetchToday, 
+	isFetchingToday, 
+	canFetchToday 
+}: SummaryHeaderProps) {
 	const formatDate = (dateStr: string) => {
 		const date = new Date(dateStr)
 		return date.toLocaleDateString('en-US', { 
@@ -373,15 +376,34 @@ function SummaryHeader({ date, onRefresh, isRefreshing }: {
 					📅 {formatDate(date)}
 				</h1>
 			</div>
-			<Button
-				onClick={onRefresh}
-				disabled={isRefreshing}
-				variant="outline"
-				className="shadow-sm"
-			>
-				<RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-				{isRefreshing ? 'Refreshing...' : 'Refresh'}
-			</Button>
+			<div className="flex items-center gap-2">
+				{onFetchToday && (
+					<Button
+						onClick={onFetchToday}
+						disabled={isFetchingToday || !canFetchToday}
+						variant="default"
+						className="shadow-sm ml-2 bg-blue-600 hover:bg-blue-700 text-white"
+					>
+						{isFetchingToday ? (
+							<>
+								<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+								Fetching All...
+							</>
+						) : (
+							"🚀 Fetch All Today"
+						)}
+					</Button>
+				)}
+				<Button
+					onClick={onRefresh}
+					disabled={isRefreshing}
+					variant="outline"
+					className="shadow-sm"
+				>
+					<RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+					{isRefreshing ? 'Refreshing...' : 'Refresh'}
+				</Button>
+			</div>
 		</div>
 	)
 }
@@ -391,6 +413,8 @@ export default function TodaySummaryPage() {
 	const [digests, setDigests] = useState<TodayDigestWithAccount[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [currentDate, setCurrentDate] = useState('')
+	const [isFetchingToday, setIsFetchingToday] = useState(false)
+	const [canFetchToday, setCanFetchToday] = useState(true)
 
 	const loadTodayDigests = async () => {
 		setIsLoading(true)
@@ -414,6 +438,77 @@ export default function TodaySummaryPage() {
 		}
 	}
 
+	const checkIfCanFetchToday = async () => {
+		try {
+			// For now, we'll assume fetching is always allowed
+			// This can be enhanced later to check processing logs
+			setCanFetchToday(true)
+		} catch (error) {
+			console.error('❌ Error checking fetch status:', error)
+			setCanFetchToday(true)
+		}
+	}
+
+	const handleFetchToday = async () => {
+		// Get userId from first digest, or fetch from connected accounts if no digests exist
+		let userId = digests[0]?.digest.userId
+
+		if (!userId) {
+			// If no digests exist, fetch userId from connected accounts
+			try {
+				const accountsResponse = await fetch('/api/auth/accounts/all')
+				const accountsData = await accountsResponse.json()
+				
+				if (accountsData.accounts && accountsData.accounts.length > 0) {
+					userId = accountsData.accounts[0].userId
+					console.log(`🔍 Got userId from connected accounts: ${userId}`)
+				} else {
+					toast.error("No connected accounts found. Please connect an account first.")
+					return
+				}
+			} catch (error) {
+				console.error("❌ Error fetching connected accounts:", error)
+				toast.error("Could not determine user ID. Please try refreshing the page.")
+				return
+			}
+		}
+
+		if (!userId) {
+			toast.error("User ID not found. Cannot fetch emails.")
+			return
+		}
+
+		console.log(`🚀 Starting fetch for userId: ${userId}`)
+		setIsFetchingToday(true)
+		toast.info("🚀 Starting to fetch and summarize today's emails for all accounts...")
+
+		try {
+			// This API route needs to be implemented/modified as per Phase 2, Step 3
+			const response = await fetch('/api/emails/summarize', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					userId,
+					forceReprocess: true // Force reprocessing even if already done today
+				}),
+			})
+			const data = await response.json()
+
+			if (data.success) {
+				toast.success(data.message || "Successfully processed today's emails for all accounts!")
+				await loadTodayDigests() // Refresh the displayed digests
+				await checkIfCanFetchToday() // Re-check if fetching is still allowed
+			} else {
+				toast.error(data.error || "Failed to process today's emails.")
+			}
+		} catch (error) {
+			console.error("❌ Error fetching all today's emails:", error)
+			toast.error("An error occurred while fetching emails.")
+		} finally {
+			setIsFetchingToday(false)
+		}
+	}
+
 	const handleRefresh = async () => {
 		await loadTodayDigests()
 		toast.success('Email summaries refreshed!')
@@ -421,7 +516,13 @@ export default function TodaySummaryPage() {
 
 	useEffect(() => {
 		loadTodayDigests()
+		checkIfCanFetchToday()
 	}, [])
+
+	useEffect(() => {
+		// Re-check fetch status when digests change
+		checkIfCanFetchToday()
+	}, [digests])
 
 	return (
 		<ContentView>
@@ -429,6 +530,9 @@ export default function TodaySummaryPage() {
 				date={currentDate || new Date().toISOString().split('T')[0]}
 				onRefresh={handleRefresh}
 				isRefreshing={isLoading}
+				onFetchToday={handleFetchToday}
+				isFetchingToday={isFetchingToday}
+				canFetchToday={canFetchToday}
 			/>
 
 			{isLoading ? (

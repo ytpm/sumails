@@ -1,68 +1,79 @@
 [
   {
-    "id": "ZWUkceYmKf1sZEdMUD1va",
+    "id": "FJe6w2nuMIbg2AvkPUfG_",
     "userId": "115467879480945091792",
     "accountId": "yt@playmania.io",
-    "date": "2025-05-24",
-    "status": "worth_a_look",
+    "date": "2025-05-25",
+    "created_at": "2025-05-25T04:33:15.773Z",
     "overview": [
-      "📬 2 emails today",
-      "🔥 0 important messages",
-      "💬 Topics: receipts, platform updates"
+      "Received 1 email today",
+      "0 important messages flagged",
+      "Topics: billing"
     ],
-    "insight": "Today's emails are routine updates and receipts, with no urgent actions required.",
-    "highlights": [],
-    "suggestion": "Consider unsubscribing from Railway to reduce clutter.",
-    "created_at": "2025-05-24T20:11:40.860Z"
+    "insight": "Only a billing receipt was received today, with no immediate actions required.",
+    "important_emails": [],
+    "inbox_status": "all_clear",
+    "suggestions": [
+      "Consider setting up filters for receipts to automatically categorize them into a billing folder.",
+      "If not needed, unsubscribe from automated receipt emails when possible to reduce inbox clutter.",
+      "Regularly review and archive old billing emails to maintain a clean inbox."
+    ]
   },
   {
-    "id": "8uxASsmN6NSqeB58Y271K",
+    "id": "4a3XySnuGRkjRKivl9OL6",
     "userId": "104681680828637897674",
     "accountId": "yositsafar@gmail.com",
-    "date": "2025-05-24",
-    "status": "attention_needed",
+    "date": "2025-05-25",
+    "created_at": "2025-05-25T04:33:19.074Z",
     "overview": [
-      "📬 7 emails today",
-      "🔥 2 important messages",
-      "💬 Topics: security alerts, order confirmations, comment approvals"
+      "Received 3 emails today",
+      "2 important messages flagged",
+      "Topics: security alerts, comment approval"
     ],
-    "insight": "Security alerts need review, but nothing time-sensitive.",
-    "highlights": [
+    "insight": "Security alerts were present for Google accounts, requiring verification of recent activity.",
+    "important_emails": [
       {
         "subject": "Security alert for dreamscan.aitool@gmail.com",
-        "from": "Google"
+        "sender": "Google",
+        "reason": "A new app was granted access to your account; verify if this was authorized."
       },
       {
         "subject": "Security alert",
-        "from": "Google"
-      },
-      {
-        "subject": "Yossi Tsafar, thank you for your order.",
-        "from": "GoDaddy"
+        "sender": "Google",
+        "reason": "A new app was granted access to an associated account; verify if this was authorized."
       }
     ],
-    "suggestion": "Consider unsubscribing from Railway to reduce clutter.",
-    "created_at": "2025-05-24T20:11:45.059Z"
+    "inbox_status": "attention_needed",
+    "suggestions": [
+      "Review and address security alerts promptly to ensure account safety.",
+      "Consider setting up filters for WordPress comment notifications if not managing them actively.",
+      "Unsubscribe from redundant alerts if not necessary for account monitoring."
+    ]
   },
   {
-    "id": "gmYsLaSjWpupDe0lQAXo-",
+    "id": "9nMqylfdWL00pT20LC9Z3",
     "userId": "118257279237790371687",
     "accountId": "dreamscan.aitool@gmail.com",
-    "date": "2025-05-24",
-    "status": "attention_needed",
+    "date": "2025-05-25",
+    "created_at": "2025-05-25T04:33:21.710Z",
     "overview": [
-      "📬 1 email today",
-      "🔥 1 important message",
-      "💬 Topics: security alerts"
+      "Received 1 email today",
+      "1 important message flagged",
+      "Topics: security alert"
     ],
-    "insight": "Security alert needs immediate review to ensure account safety.",
-    "highlights": [
+    "insight": "A security alert from Google requires your attention to verify account access.",
+    "important_emails": [
       {
         "subject": "Security alert",
-        "from": "Google"
+        "sender": "Google <no-reply@accounts.google.com>",
+        "reason": "New app access granted to your Google account; check if this was authorized."
       }
     ],
-    "suggestion": "",
-    "created_at": "2025-05-24T20:11:48.838Z"
+    "inbox_status": "attention_needed",
+    "suggestions": [
+      "Review and confirm recent app permissions for your Google account.",
+      "Consider setting up additional security measures like two-factor authentication if not already in place.",
+      "Regularly check for security alerts to ensure your account safety."
+    ]
   }
 ]
