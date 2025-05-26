@@ -5,4 +5,5 @@ export { default as NotificationPreferencesCard } from './NotificationPreference
 export { default as AccountDeletionCard } from './AccountDeletionCard'
 export { default as EmailManagementCard } from './EmailManagementCard'
 export { default as SecurityCard } from './SecurityCard'
+export { default as LogoutCard } from './LogoutCard'
 export { default as SettingsLoadingSkeleton } from './SettingsLoadingSkeleton' 

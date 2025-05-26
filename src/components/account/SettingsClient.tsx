@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useSettings } from '@/hooks/use-settings'
 import { settingsService } from '@/lib/services/settings'
@@ -18,6 +15,7 @@ import {
 	AccountDeletionCard,
 	EmailManagementCard,
 	SecurityCard,
+	LogoutCard,
 	SettingsLoadingSkeleton
 } from './settings'
 
@@ -188,24 +186,7 @@ export default function SettingsClient() {
 							<SecurityCard />
 
 							{/* Logout */}
-							<Card>
-								<CardHeader>
-									<CardTitle className="text-lg font-semibold">Sign Out</CardTitle>
-									<CardDescription>
-										Sign out of your account on this device
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<Button
-										variant="outline"
-										onClick={handleLogout}
-										className="w-full flex items-center justify-center space-x-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-									>
-										<LogOut className="h-4 w-4" />
-										<span>Sign Out</span>
-									</Button>
-								</CardContent>
-							</Card>
+							<LogoutCard onLogout={handleLogout} />
 						</div>
 					</div>
 				</div>
