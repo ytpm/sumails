@@ -1,33 +1,67 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/auth-context'
 import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
-
-interface ConnectedAccount {
-	id: string
-	email: string
-	provider: string
-	status: 'active' | 'error' | 'expired'
-	lastSync?: string
-	emailCount?: number
-}
+import type { ConnectedAccountWithStatus } from '@/lib/connected-accounts/service'
 
 interface ConnectedAccountsClientProps {
-	initialAccounts: ConnectedAccount[]
+	initialAccounts: ConnectedAccountWithStatus[]
 }
 
 export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAccountsClientProps) {
 	const router = useRouter()
+	const searchParams = useSearchParams()
 	const { isLoading, isAuthenticated } = useAuth()
-	const [accounts, setAccounts] = useState<ConnectedAccount[]>(initialAccounts)
+	const [accounts, setAccounts] = useState<ConnectedAccountWithStatus[]>(initialAccounts)
 	const [isConnecting, setIsConnecting] = useState(false)
-	const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
+	const [disconnectingId, setDisconnectingId] = useState<number | null>(null)
+	const [syncingId, setSyncingId] = useState<number | null>(null)
+
+	// Function to refresh accounts from server
+	const refreshAccounts = async () => {
+		try {
+			const response = await fetch('/api/connected-accounts')
+			if (response.ok) {
+				const data = await response.json()
+				setAccounts(data.accounts || [])
+			}
+		} catch (error) {
+			console.error('Failed to refresh accounts:', error)
+		}
+	}
+
+	// Handle URL parameters for success/error messages
+	useEffect(() => {
+		const success = searchParams.get('success')
+		const error = searchParams.get('error')
+
+		if (success === 'account_connected') {
+			toast.success('Account connected successfully!')
+			// Refresh accounts to show the new account
+			refreshAccounts()
+			// Clear the URL parameters to prevent infinite reload
+			const url = new URL(window.location.href)
+			url.searchParams.delete('success')
+			router.replace(url.pathname + url.search)
+		} else if (error) {
+			const errorMessages: Record<string, string> = {
+				'connection_failed': 'Failed to connect account. Please try again.',
+				'missing_code': 'Authorization code missing. Please try again.',
+				'not_authenticated': 'Please log in to connect accounts.',
+			}
+			toast.error(errorMessages[error] || 'An error occurred. Please try again.')
+			// Clear the URL parameters
+			const url = new URL(window.location.href)
+			url.searchParams.delete('error')
+			router.replace(url.pathname + url.search)
+		}
+	}, [searchParams, router])
 
 	// Redirect if not authenticated
 	useEffect(() => {
@@ -36,83 +70,66 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 		}
 	}, [isLoading, isAuthenticated, router])
 
-	// Mock data for demonstration
-	useEffect(() => {
-		// Simulate loading connected accounts
-		const mockAccounts: ConnectedAccount[] = [
-			{
-				id: '1',
-				email: 'john.doe@gmail.com',
-				provider: 'Google',
-				status: 'active',
-				lastSync: '2 hours ago',
-				emailCount: 156
-			},
-			{
-				id: '2',
-				email: 'work@company.com',
-				provider: 'Google',
-				status: 'active',
-				lastSync: '1 hour ago',
-				emailCount: 89
-			},
-			{
-				id: '3',
-				email: 'old.account@gmail.com',
-				provider: 'Google',
-				status: 'expired',
-				lastSync: '3 days ago',
-				emailCount: 0
-			}
-		]
-		setAccounts(mockAccounts)
-	}, [])
-
 	const handleConnectAccount = async () => {
 		try {
 			setIsConnecting(true)
-			// TODO: Implement Google OAuth flow
-			// For now, simulate the connection process
-			await new Promise(resolve => setTimeout(resolve, 2000))
 			
-			// Simulate adding a new account
-			const newAccount: ConnectedAccount = {
-				id: Date.now().toString(),
-				email: 'new.account@gmail.com',
-				provider: 'Google',
-				status: 'active',
-				lastSync: 'Just now',
-				emailCount: 0
+			// Call API to get OAuth URL
+			const response = await fetch('/api/connected-accounts', {
+				method: 'POST',
+			})
+
+			if (!response.ok) {
+				throw new Error('Failed to initiate OAuth flow')
 			}
+
+			const { authUrl } = await response.json()
 			
-			setAccounts(prev => [...prev, newAccount])
-			toast.success('Account connected successfully!')
+			// Redirect to Google OAuth
+			window.location.href = authUrl
 		} catch (error) {
+			console.error('Connect account error:', error)
 			toast.error('Failed to connect account. Please try again.')
-		} finally {
 			setIsConnecting(false)
 		}
 	}
 
-	const handleDisconnectAccount = async (accountId: string, email: string) => {
+	const handleDisconnectAccount = async (accountId: number, email: string) => {
 		try {
 			setDisconnectingId(accountId)
-			// TODO: Implement actual disconnection logic
-			await new Promise(resolve => setTimeout(resolve, 1000))
+			
+			const response = await fetch(`/api/connected-accounts/${accountId}`, {
+				method: 'DELETE',
+			})
+
+			if (!response.ok) {
+				throw new Error('Failed to disconnect account')
+			}
 			
 			setAccounts(prev => prev.filter(account => account.id !== accountId))
 			toast.success(`${email} disconnected successfully`)
 		} catch (error) {
+			console.error('Disconnect error:', error)
 			toast.error('Failed to disconnect account. Please try again.')
 		} finally {
 			setDisconnectingId(null)
 		}
 	}
 
-	const handleSyncAccount = async (accountId: string, email: string) => {
+	const handleSyncAccount = async (accountId: number, email: string) => {
 		try {
-			// TODO: Implement actual sync logic
-			await new Promise(resolve => setTimeout(resolve, 1500))
+			setSyncingId(accountId)
+			
+			const response = await fetch(`/api/connected-accounts/${accountId}/sync`, {
+				method: 'POST',
+			})
+
+			if (!response.ok) {
+				const errorData = await response.json()
+				throw new Error(errorData.error || 'Failed to sync account')
+			}
+
+			const result = await response.json()
 			
 			setAccounts(prev => prev.map(account => 
 				account.id === accountId 
@@ -121,11 +138,14 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 			))
 			toast.success(`${email} synced successfully`)
 		} catch (error) {
-			toast.error('Failed to sync account. Please try again.')
+			console.error('Sync error:', error)
+			toast.error(error instanceof Error ? error.message : 'Failed to sync account. Please try again.')
+		} finally {
+			setSyncingId(null)
 		}
 	}
 
-	const getStatusIcon = (status: ConnectedAccount['status']) => {
+	const getStatusIcon = (status: ConnectedAccountWithStatus['status']) => {
 		switch (status) {
 			case 'active':
 				return <CheckCircle className="h-4 w-4 text-green-500" />
@@ -138,7 +158,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 		}
 	}
 
-	const getStatusText = (status: ConnectedAccount['status']) => {
+	const getStatusText = (status: ConnectedAccountWithStatus['status']) => {
 		switch (status) {
 			case 'active':
 				return 'Active'
@@ -241,16 +261,20 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 												variant="outline"
 												size="sm"
 												onClick={() => handleSyncAccount(account.id, account.email)}
-												disabled={disconnectingId === account.id}
+												disabled={disconnectingId === account.id || syncingId === account.id}
 											>
-												<RefreshCw className="h-4 w-4 mr-2" />
+												{syncingId === account.id ? (
+													<RefreshCw className="h-4 w-4 animate-spin mr-2" />
+												) : (
+													<RefreshCw className="h-4 w-4 mr-2" />
+												)}
 												Sync
 											</Button>
 											<Button
 												variant="outline"
 												size="sm"
 												onClick={() => handleDisconnectAccount(account.id, account.email)}
-												disabled={disconnectingId === account.id}
+												disabled={disconnectingId === account.id || syncingId === account.id}
 												className="text-destructive hover:text-destructive"
 											>
 												{disconnectingId === account.id ? (

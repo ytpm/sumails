@@ -6,11 +6,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 
 const Header = () => {
 	const [isScrolled, setIsScrolled] = useState(false);
@@ -51,46 +46,12 @@ const Header = () => {
 		if (isAuthenticated) {
 			return (
 				<div className="flex items-center space-x-4">
-					<Dialog>
-						<DialogTrigger asChild>
-							<Button variant="outline" size="sm" className="flex items-center space-x-2">
-								<User className="h-4 w-4" />
-								<span className="hidden sm:inline">My Account</span>
-							</Button>
-						</DialogTrigger>
-						<DialogContent className="sm:max-w-md">
-							<div className="flex flex-col space-y-4 p-4">
-								<div className="text-center">
-									<h3 className="text-lg font-semibold">Account Menu</h3>
-									{authUser?.email && (
-										<p className="text-sm text-muted-foreground">{authUser.email}</p>
-									)}
-								</div>
-								<div className="flex flex-col space-y-2">
-									<Link href="/account/settings">
-										<Button variant="outline" className="w-full justify-start">
-											<User className="h-4 w-4 mr-2" />
-											Account Settings
-										</Button>
-									</Link>
-									<Link href="/account/connected-accounts">
-										<Button variant="outline" className="w-full justify-start">
-											<Inbox className="h-4 w-4 mr-2" />
-											Connected Accounts
-										</Button>
-									</Link>
-									<Button 
-										variant="outline" 
-										className="w-full justify-start text-destructive hover:text-destructive"
-										onClick={handleSignOut}
-									>
-										<LogOut className="h-4 w-4 mr-2" />
-										Sign Out
-									</Button>
-								</div>
-							</div>
-						</DialogContent>
-					</Dialog>
+					<Link href="/account/settings">
+						<Button variant="outline" size="sm" className="flex items-center space-x-2">
+							<User className="h-4 w-4" />
+							<span className="hidden sm:inline">My Account</span>
+						</Button>
+					</Link>
 				</div>
 			);
 		}
@@ -127,13 +88,7 @@ const Header = () => {
 					<Link href="/account/settings" onClick={() => setIsMobileMenuOpen(false)}>
 						<Button variant="outline" className="w-full justify-start">
 							<User className="h-4 w-4 mr-2" />
-							Account Settings
-						</Button>
-					</Link>
-					<Link href="/account/connected-accounts" onClick={() => setIsMobileMenuOpen(false)}>
-						<Button variant="outline" className="w-full justify-start">
-							<Inbox className="h-4 w-4 mr-2" />
-							Connected Accounts
+							My Account
 						</Button>
 					</Link>
 					<Button 

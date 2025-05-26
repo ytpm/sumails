@@ -1,15 +1,31 @@
 import { Metadata } from 'next'
+import { createClient } from '@/utils/supabase/server'
+import { getUserConnectedAccounts } from '@/lib/connected-accounts/service'
 import ConnectedAccountsClient from '@/app/components/account/ConnectedAccountsClient'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
 	title: 'Connected Accounts | Sumails',
 	description: 'Manage your connected email accounts',
 }
 
-export default function ConnectedAccountsPage() {
-	// TODO: In a real implementation, fetch connected accounts from Supabase here
-	// For now, we'll pass empty array and let the client component handle the data fetching
-	const connectedAccounts: any[] = []
+export default async function ConnectedAccountsPage() {
+	// Get the current user from Supabase
+	const supabase = await createClient()
+	const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-	return <ConnectedAccountsClient initialAccounts={connectedAccounts} />
+	// Redirect to login if not authenticated
+	if (userError || !user) {
+		redirect('/auth/login')
+	}
+
+	// Fetch connected accounts from Supabase
+	try {
+		const connectedAccounts = await getUserConnectedAccounts(user.id)
+		return <ConnectedAccountsClient initialAccounts={connectedAccounts} />
+	} catch (error) {
+		console.error('Error fetching connected accounts:', error)
+		// Return empty array if there's an error, let the client handle it
+		return <ConnectedAccountsClient initialAccounts={[]} />
+	}
 } 
