@@ -22,6 +22,7 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 	const [isConnecting, setIsConnecting] = useState(false)
 	const [disconnectingId, setDisconnectingId] = useState<number | null>(null)
 	const [syncingId, setSyncingId] = useState<number | null>(null)
+	const [isRefreshingTokens, setIsRefreshingTokens] = useState(false)
 
 	// Function to refresh accounts from server
 	const refreshAccounts = async () => {
@@ -35,6 +36,48 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 			console.error('Failed to refresh accounts:', error)
 		}
 	}
+
+	// Function to check and refresh expired tokens
+	const checkAndRefreshTokens = async () => {
+		try {
+			setIsRefreshingTokens(true)
+			
+			const response = await fetch('/api/connected-accounts/refresh-tokens', {
+				method: 'POST',
+			})
+
+			if (response.ok) {
+				const result = await response.json()
+				
+				if (result.refreshedCount > 0) {
+					console.log(`🔄 Refreshed ${result.refreshedCount} expired tokens`)
+					// Refresh accounts to show updated status
+					await refreshAccounts()
+				}
+				
+				if (result.errorCount > 0) {
+					console.warn(`⚠️ Failed to refresh ${result.errorCount} tokens`)
+				}
+			}
+		} catch (error) {
+			console.error('Failed to refresh tokens:', error)
+		} finally {
+			setIsRefreshingTokens(false)
+		}
+	}
+
+	// Check and refresh tokens when component loads
+	useEffect(() => {
+		if (isAuthenticated && accounts.length > 0) {
+			// Check if any accounts have expired status
+			const hasExpiredAccounts = accounts.some(account => account.status === 'expired')
+			
+			if (hasExpiredAccounts) {
+				console.log('🔍 Found expired accounts, attempting to refresh tokens...')
+				checkAndRefreshTokens()
+			}
+		}
+	}, [isAuthenticated, initialAccounts.length]) // Only run when auth status changes or initial load
 
 	// Handle URL parameters for success/error messages
 	useEffect(() => {
@@ -204,19 +247,42 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 						<p className="text-muted-foreground mt-2">
 							Manage your connected email mailboxes and view their status
 						</p>
-					</div>
-					<Button 
-						onClick={handleConnectAccount}
-						disabled={isConnecting}
-						className="flex items-center gap-2"
-					>
-						{isConnecting ? (
-							<RefreshCw className="h-4 w-4 animate-spin" />
-						) : (
-							<Plus className="h-4 w-4" />
+						{isRefreshingTokens && (
+							<div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+								<RefreshCw className="h-4 w-4 animate-spin" />
+								Refreshing expired tokens...
+							</div>
 						)}
-						{isConnecting ? 'Connecting...' : 'Connect Mailbox'}
-					</Button>
+					</div>
+					<div className="flex items-center gap-2">
+						{accounts.length > 0 && (
+							<Button 
+								variant="outline"
+								onClick={checkAndRefreshTokens}
+								disabled={isRefreshingTokens || isConnecting}
+								className="flex items-center gap-2"
+							>
+								{isRefreshingTokens ? (
+									<RefreshCw className="h-4 w-4 animate-spin" />
+								) : (
+									<RefreshCw className="h-4 w-4" />
+								)}
+								Refresh Tokens
+							</Button>
+						)}
+						<Button 
+							onClick={handleConnectAccount}
+							disabled={isConnecting}
+							className="flex items-center gap-2"
+						>
+							{isConnecting ? (
+								<RefreshCw className="h-4 w-4 animate-spin" />
+							) : (
+								<Plus className="h-4 w-4" />
+							)}
+							{isConnecting ? 'Connecting...' : 'Connect Mailbox'}
+						</Button>
+					</div>
 				</div>
 
 				{/* Connected Accounts List */}
