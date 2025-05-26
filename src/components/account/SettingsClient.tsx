@@ -2,26 +2,45 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/auth-context'
-import { User, Mail, Bell, Shield, ExternalLink } from 'lucide-react'
+import {
+	AccountInformationCard,
+	SummarySettingsCard,
+	SubscriptionCard,
+	NotificationPreferencesCard,
+	AccountDeletionCard,
+	EmailManagementCard,
+	SecurityCard,
+	SettingsLoadingSkeleton
+} from './settings'
 
 export default function SettingsClient() {
 	const router = useRouter()
 	const { authUser, isLoading, isAuthenticated } = useAuth()
 	const [notifications, setNotifications] = useState({
-		emailDigests: true,
-		securityAlerts: true,
 		productUpdates: false,
 		marketingEmails: false,
 	})
+	const [summarySettings, setSummarySettings] = useState({
+		receiveBy: {
+			email: true,
+			whatsapp: false,
+		},
+		preferredTime: '09:00',
+		timezone: 'UTC',
+		language: 'friendly',
+	})
+	const [subscriptionData, setSubscriptionData] = useState({
+		isSubscribed: true, // TODO: Get from actual subscription service
+		plan: 'Pro',
+		status: 'active',
+		renewsOn: '2024-02-15',
+		billingCycle: 'monthly',
+	})
 	const [isSaving, setIsSaving] = useState(false)
+	const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
 	// Redirect if not authenticated
 	useEffect(() => {
@@ -37,10 +56,57 @@ export default function SettingsClient() {
 		}))
 	}
 
+	const handleSummaryReceiveByChange = (key: keyof typeof summarySettings.receiveBy) => {
+		setSummarySettings(prev => ({
+			...prev,
+			receiveBy: {
+				...prev.receiveBy,
+				[key]: !prev.receiveBy[key]
+			}
+		}))
+	}
+
+	const handleSummarySettingChange = (key: keyof Omit<typeof summarySettings, 'receiveBy'>, value: string) => {
+		setSummarySettings(prev => ({
+			...prev,
+			[key]: value
+		}))
+	}
+
+	const handleManageSubscription = () => {
+		// TODO: Integrate with subscription service (Stripe, etc.)
+		toast.info('Redirecting to subscription management...')
+	}
+
+	const handleCancelSubscription = () => {
+		// TODO: Implement subscription cancellation
+		toast.info('Subscription cancellation flow...')
+	}
+
+	const handleDeleteAccount = async () => {
+		if (!confirm('Are you sure you want to delete your account? This action cannot be undone and will remove all your data.')) {
+			return
+		}
+
+		try {
+			setIsDeletingAccount(true)
+			// TODO: Implement actual account deletion
+			await new Promise(resolve => setTimeout(resolve, 2000))
+			toast.success('Account deletion initiated. You will be logged out shortly.')
+			// TODO: Sign out user and redirect
+		} catch (error) {
+			toast.error('Failed to delete account. Please try again.')
+		} finally {
+			setIsDeletingAccount(false)
+		}
+	}
+
 	const handleSaveSettings = async () => {
 		try {
 			setIsSaving(true)
 			// TODO: Implement actual settings save to Supabase
+			// Include notifications and summarySettings in the save
+			console.log('Saving settings:', { notifications, summarySettings })
 			// For now, just simulate a save
 			await new Promise(resolve => setTimeout(resolve, 1000))
 			toast.success('Settings saved successfully!')
@@ -52,14 +118,7 @@ export default function SettingsClient() {
 	}
 
 	if (isLoading) {
-		return (
-			<div className="min-h-screen bg-background flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-					<p className="text-muted-foreground">Loading...</p>
-				</div>
-			</div>
-		)
+		return <SettingsLoadingSkeleton />
 	}
 
 	if (!isAuthenticated) {
@@ -81,105 +140,33 @@ export default function SettingsClient() {
 					{/* Main Settings */}
 					<div className="lg:col-span-2 space-y-6">
 						{/* Account Information */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<User className="h-5 w-5" />
-									Account Information
-								</CardTitle>
-								<CardDescription>
-									Your basic account details
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div>
-									<Label htmlFor="email">Email Address</Label>
-									<div className="mt-1 p-3 bg-muted rounded-md">
-										<p className="text-sm text-muted-foreground">
-											{authUser?.email || 'No email available'}
-										</p>
-									</div>
-								</div>
-								<div>
-									<Label>Account Status</Label>
-									<div className="mt-1 p-3 bg-muted rounded-md">
-										<p className="text-sm text-green-600 font-medium">
-											✓ Verified
-										</p>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
+						<AccountInformationCard email={authUser?.email} />
+
+						{/* Summary Settings */}
+						<SummarySettingsCard
+							settings={summarySettings}
+							onReceiveByChange={handleSummaryReceiveByChange}
+							onSettingChange={handleSummarySettingChange}
+						/>
+
+						{/* Subscription Card - Only show if subscribed */}
+						<SubscriptionCard
+							subscriptionData={subscriptionData}
+							onManageSubscription={handleManageSubscription}
+							onCancelSubscription={handleCancelSubscription}
+						/>
 
 						{/* Notification Preferences */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Bell className="h-5 w-5" />
-									Notification Preferences
-								</CardTitle>
-								<CardDescription>
-									Choose what notifications you'd like to receive
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="space-y-6">
-								<div className="flex items-center justify-between">
-									<div className="space-y-0.5">
-										<Label htmlFor="email-digests">Email Digests</Label>
-										<p className="text-sm text-muted-foreground">
-											Receive daily summaries of your emails
-										</p>
-									</div>
-									<Switch
-										id="email-digests"
-										checked={notifications.emailDigests}
-										onCheckedChange={() => handleNotificationChange('emailDigests')}
-									/>
-								</div>
-								<Separator />
-								<div className="flex items-center justify-between">
-									<div className="space-y-0.5">
-										<Label htmlFor="security-alerts">Security Alerts</Label>
-										<p className="text-sm text-muted-foreground">
-											Important security notifications
-										</p>
-									</div>
-									<Switch
-										id="security-alerts"
-										checked={notifications.securityAlerts}
-										onCheckedChange={() => handleNotificationChange('securityAlerts')}
-									/>
-								</div>
-								<Separator />
-								<div className="flex items-center justify-between">
-									<div className="space-y-0.5">
-										<Label htmlFor="product-updates">Product Updates</Label>
-										<p className="text-sm text-muted-foreground">
-											News about new features and improvements
-										</p>
-									</div>
-									<Switch
-										id="product-updates"
-										checked={notifications.productUpdates}
-										onCheckedChange={() => handleNotificationChange('productUpdates')}
-									/>
-								</div>
-								<Separator />
-								<div className="flex items-center justify-between">
-									<div className="space-y-0.5">
-										<Label htmlFor="marketing-emails">Marketing Emails</Label>
-										<p className="text-sm text-muted-foreground">
-											Tips, tutorials, and promotional content
-										</p>
-									</div>
-									<Switch
-										id="marketing-emails"
-										checked={notifications.marketingEmails}
-										onCheckedChange={() => handleNotificationChange('marketingEmails')}
-									/>
-								</div>
-							</CardContent>
-						</Card>
+						<NotificationPreferencesCard
+							notifications={notifications}
+							onNotificationChange={handleNotificationChange}
+						/>
+
+						{/* Account Deletion */}
+						<AccountDeletionCard
+							onDeleteAccount={handleDeleteAccount}
+							isDeletingAccount={isDeletingAccount}
+						/>
 
 						{/* Save Button */}
 						<div className="flex justify-end">
@@ -195,47 +182,11 @@ export default function SettingsClient() {
 
 					{/* Sidebar */}
 					<div className="space-y-6">
-						{/* Quick Actions */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Mail className="h-5 w-5" />
-									Email Management
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								<Link href="/account/mailboxes">
-									<Button variant="outline" className="w-full justify-between">
-										Mailboxes
-										<ExternalLink className="h-4 w-4" />
-									</Button>
-								</Link>
-								<p className="text-xs text-muted-foreground">
-									Manage your connected email mailboxes and view summaries
-								</p>
-							</CardContent>
-						</Card>
+						{/* Email Management */}
+						<EmailManagementCard />
 
 						{/* Security */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Shield className="h-5 w-5" />
-									Security
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								<Link href="/auth/update-password">
-									<Button variant="outline" className="w-full justify-between">
-										Change Password
-										<ExternalLink className="h-4 w-4" />
-									</Button>
-								</Link>
-								<p className="text-xs text-muted-foreground">
-									Update your account password for better security
-								</p>
-							</CardContent>
-						</Card>
+						<SecurityCard />
 					</div>
 				</div>
 			</div>

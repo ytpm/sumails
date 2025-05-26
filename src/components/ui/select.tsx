@@ -29,6 +29,7 @@ interface SelectProps {
 const Select = ({ value, defaultValue, onValueChange, children }: SelectProps) => {
 	const [open, setOpen] = React.useState(false)
 	const [internalValue, setInternalValue] = React.useState(defaultValue || "")
+	const selectRef = React.useRef<HTMLDivElement>(null)
 	
 	const currentValue = value !== undefined ? value : internalValue
 	
@@ -40,6 +41,23 @@ const Select = ({ value, defaultValue, onValueChange, children }: SelectProps) =
 		setOpen(false)
 	}
 
+	// Close select when clicking outside
+	React.useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+				setOpen(false)
+			}
+		}
+
+		if (open) {
+			document.addEventListener('mousedown', handleClickOutside)
+		}
+
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside)
+		}
+	}, [open])
+
 	return (
 		<SelectContext.Provider value={{ 
 			value: currentValue, 
@@ -47,7 +65,7 @@ const Select = ({ value, defaultValue, onValueChange, children }: SelectProps) =
 			open, 
 			setOpen 
 		}}>
-			<div className="relative">
+			<div ref={selectRef} className="relative">
 				{children}
 			</div>
 		</SelectContext.Provider>
