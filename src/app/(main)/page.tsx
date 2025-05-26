@@ -1,10 +1,10 @@
-import CTA from '@/components/CTA';
-import FAQ from '@/components/FAQ';
-import Features from '@/components/Features';
-import Hero from '@/components/Hero';
-import HowItWorks from '@/components/HowItWorks';
-import Pricing from '@/components/Pricing';
-import Testimonials from '@/components/Testimonials';
+import CTA from '@/components/home/CTA';
+import FAQ from '@/components/home/FAQ';
+import Features from '@/components/home/Features';
+import Hero from '@/components/home/Hero';
+import HowItWorks from '@/components/home/HowItWorks';
+import Pricing from '@/components/home/Pricing';
+import Testimonials from '@/components/home/Testimonials';
 
 export default function Home() {
   return (

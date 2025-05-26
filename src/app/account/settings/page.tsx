@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import SettingsClient from '@/app/components/account/SettingsClient'
+import SettingsClient from '@/components/account/SettingsClient'
 
 export const metadata: Metadata = {
 	title: 'Account Settings | Sumails',

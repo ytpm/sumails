@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import SignupClient from '@/app/components/auth/SignupClient'
+import SignupClient from '@/components/auth/SignupClient'
 
 export const metadata: Metadata = {
 	title: 'Sign Up | Sumails',

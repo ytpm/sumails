@@ -8,17 +8,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/auth-context'
 import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
-import type { ConnectedAccountWithStatus } from '@/lib/connected-accounts/service'
+import type { MailboxWithStatus } from '@/lib/mailboxes/service'
 
-interface ConnectedAccountsClientProps {
-	initialAccounts: ConnectedAccountWithStatus[]
+interface MailboxesClientProps {
+	initialAccounts: MailboxWithStatus[]
 }
 
-export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAccountsClientProps) {
+export default function MailboxesClient({ initialAccounts }: MailboxesClientProps) {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { isLoading, isAuthenticated } = useAuth()
-	const [accounts, setAccounts] = useState<ConnectedAccountWithStatus[]>(initialAccounts)
+	const [accounts, setAccounts] = useState<MailboxWithStatus[]>(initialAccounts)
 	const [isConnecting, setIsConnecting] = useState(false)
 	const [disconnectingId, setDisconnectingId] = useState<number | null>(null)
 	const [syncingId, setSyncingId] = useState<number | null>(null)
@@ -42,7 +42,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 		const error = searchParams.get('error')
 
 		if (success === 'account_connected') {
-			toast.success('Account connected successfully!')
+			toast.success('Mailbox connected successfully!')
 			// Refresh accounts to show the new account
 			refreshAccounts()
 			// Clear the URL parameters to prevent infinite reload
@@ -51,9 +51,9 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 			router.replace(url.pathname + url.search)
 		} else if (error) {
 			const errorMessages: Record<string, string> = {
-				'connection_failed': 'Failed to connect account. Please try again.',
+				'connection_failed': 'Failed to connect mailbox. Please try again.',
 				'missing_code': 'Authorization code missing. Please try again.',
-				'not_authenticated': 'Please log in to connect accounts.',
+				'not_authenticated': 'Please log in to connect mailboxes.',
 			}
 			toast.error(errorMessages[error] || 'An error occurred. Please try again.')
 			// Clear the URL parameters
@@ -89,7 +89,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 			window.location.href = authUrl
 		} catch (error) {
 			console.error('Connect account error:', error)
-			toast.error('Failed to connect account. Please try again.')
+			toast.error('Failed to connect mailbox. Please try again.')
 			setIsConnecting(false)
 		}
 	}
@@ -110,7 +110,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 			toast.success(`${email} disconnected successfully`)
 		} catch (error) {
 			console.error('Disconnect error:', error)
-			toast.error('Failed to disconnect account. Please try again.')
+			toast.error('Failed to disconnect mailbox. Please try again.')
 		} finally {
 			setDisconnectingId(null)
 		}
@@ -139,13 +139,13 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 			toast.success(`${email} synced successfully`)
 		} catch (error) {
 			console.error('Sync error:', error)
-			toast.error(error instanceof Error ? error.message : 'Failed to sync account. Please try again.')
+			toast.error(error instanceof Error ? error.message : 'Failed to sync mailbox. Please try again.')
 		} finally {
 			setSyncingId(null)
 		}
 	}
 
-	const getStatusIcon = (status: ConnectedAccountWithStatus['status']) => {
+	const getStatusIcon = (status: MailboxWithStatus['status']) => {
 		switch (status) {
 			case 'active':
 				return <CheckCircle className="h-4 w-4 text-green-500" />
@@ -158,7 +158,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 		}
 	}
 
-	const getStatusText = (status: ConnectedAccountWithStatus['status']) => {
+	const getStatusText = (status: MailboxWithStatus['status']) => {
 		switch (status) {
 			case 'active':
 				return 'Active'
@@ -200,9 +200,9 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 								</Button>
 							</Link>
 						</div>
-						<h1 className="text-3xl font-bold text-foreground">Connected Accounts</h1>
+						<h1 className="text-3xl font-bold text-foreground">Mailboxes</h1>
 						<p className="text-muted-foreground mt-2">
-							Manage your connected email accounts and view their status
+							Manage your connected email mailboxes and view their status
 						</p>
 					</div>
 					<Button 
@@ -215,7 +215,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 						) : (
 							<Plus className="h-4 w-4" />
 						)}
-						{isConnecting ? 'Connecting...' : 'Connect Account'}
+						{isConnecting ? 'Connecting...' : 'Connect Mailbox'}
 					</Button>
 				</div>
 
@@ -225,9 +225,9 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-12">
 								<Mail className="h-12 w-12 text-muted-foreground mb-4" />
-								<h3 className="text-lg font-semibold mb-2">No Connected Accounts</h3>
+								<h3 className="text-lg font-semibold mb-2">No Connected Mailboxes</h3>
 								<p className="text-muted-foreground text-center mb-6">
-									Connect your email accounts to start receiving daily summaries
+									Connect your email mailboxes to start receiving daily summaries
 								</p>
 								<Button onClick={handleConnectAccount} disabled={isConnecting}>
 									{isConnecting ? (
@@ -235,7 +235,7 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 									) : (
 										<Plus className="h-4 w-4 mr-2" />
 									)}
-									{isConnecting ? 'Connecting...' : 'Connect Your First Account'}
+									{isConnecting ? 'Connecting...' : 'Connect Your First Mailbox'}
 								</Button>
 							</CardContent>
 						</Card>
@@ -300,14 +300,14 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 									{account.status === 'expired' && (
 										<div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
 											<p className="text-sm text-yellow-800">
-												This account's authorization has expired. Please reconnect to continue receiving summaries.
+												This mailbox's authorization has expired. Please reconnect to continue receiving summaries.
 											</p>
 										</div>
 									)}
 									{account.status === 'error' && (
 										<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
 											<p className="text-sm text-red-800">
-												There was an error accessing this account. Please try syncing or reconnecting.
+												There was an error accessing this mailbox. Please try syncing or reconnecting.
 											</p>
 										</div>
 									)}
@@ -324,9 +324,9 @@ export default function ConnectedAccountsClient({ initialAccounts }: ConnectedAc
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-2 text-sm text-muted-foreground">
-							<p>• Connected accounts allow Sumails to access and summarize your emails</p>
+							<p>• Connected mailboxes allow Sumails to access and summarize your emails</p>
 							<p>• We only read email metadata and content for summarization purposes</p>
-							<p>• You can disconnect accounts at any time</p>
+							<p>• You can disconnect mailboxes at any time</p>
 							<p>• Sync manually to get the latest email summaries</p>
 						</div>
 					</CardContent>

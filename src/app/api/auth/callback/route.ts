@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { createClient } from '@/utils/supabase/server'
-import { saveConnectedAccount, getUserInfo } from '@/lib/connected-accounts/service'
+import { saveConnectedAccount, getUserInfo } from '@/lib/mailboxes/service'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
 		if (error) {
 			console.error('OAuth error:', error)
 			return NextResponse.redirect(
-				new URL(`/account/connected-accounts?error=${encodeURIComponent(error)}`, request.url)
+				new URL(`/account/mailboxes?error=${encodeURIComponent(error)}`, request.url)
 			)
 		}
 
 		if (!code) {
 			return NextResponse.redirect(
-				new URL('/account/connected-accounts?error=missing_code', request.url)
+				new URL('/account/mailboxes?error=missing_code', request.url)
 			)
 		}
 
@@ -58,13 +58,13 @@ export async function GET(request: NextRequest) {
 
 		// Redirect to connected accounts page with success message
 		return NextResponse.redirect(
-			new URL('/account/connected-accounts?success=account_connected', request.url)
+			new URL('/account/mailboxes?success=account_connected', request.url)
 		)
 
 	} catch (error) {
 		console.error('OAuth callback error:', error)
 		return NextResponse.redirect(
-			new URL(`/account/connected-accounts?error=${encodeURIComponent('connection_failed')}`, request.url)
+			new URL(`/account/mailboxes?error=${encodeURIComponent('connection_failed')}`, request.url)
 		)
 	}
 }

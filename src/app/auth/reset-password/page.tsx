@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import ResetPasswordClient from '@/app/components/auth/ResetPasswordClient'
+import ResetPasswordClient from '@/components/auth/ResetPasswordClient'
 
 export const metadata: Metadata = {
 	title: 'Reset Password | Sumails',

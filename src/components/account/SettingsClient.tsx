@@ -204,14 +204,14 @@ export default function SettingsClient() {
 								</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-3">
-								<Link href="/account/connected-accounts">
+								<Link href="/account/mailboxes">
 									<Button variant="outline" className="w-full justify-between">
-										Connected Accounts
+										Mailboxes
 										<ExternalLink className="h-4 w-4" />
 									</Button>
 								</Link>
 								<p className="text-xs text-muted-foreground">
-									Manage your connected email accounts and view summaries
+									Manage your connected email mailboxes and view summaries
 								</p>
 							</CardContent>
 						</Card>

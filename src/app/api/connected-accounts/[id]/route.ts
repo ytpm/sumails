@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { deleteConnectedAccount, getValidCredentials, updateAccountStatus } from '@/lib/connected-accounts/service'
+import { deleteConnectedAccount, getValidCredentials, updateAccountStatus } from '@/lib/mailboxes/service'
 import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
 
 // DELETE /api/connected-accounts/[id] - Delete a connected account

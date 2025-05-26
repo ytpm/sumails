@@ -7,7 +7,7 @@ type ConnectedAccountRow = Database['public']['Tables']['connected_accounts']['R
 type ConnectedAccountInsert = Database['public']['Tables']['connected_accounts']['Insert']
 type ConnectedAccountUpdate = Database['public']['Tables']['connected_accounts']['Update']
 
-export interface ConnectedAccountWithStatus extends ConnectedAccountRow {
+export interface MailboxWithStatus extends ConnectedAccountRow {
 	status: 'active' | 'error' | 'expired'
 	lastSync?: string
 	emailCount?: number
@@ -39,9 +39,9 @@ export async function getUserInfo(accessToken: string): Promise<UserInfo> {
 }
 
 /**
- * Save Google OAuth credentials to Supabase
+ * Save Google OAuth credentials to Supabase for a mailbox
  */
-export async function saveConnectedAccount(
+export async function saveConnectedMailbox(
 	userId: string,
 	tokens: GoogleTokens,
 	userInfo: UserInfo
@@ -52,7 +52,7 @@ export async function saveConnectedAccount(
 
 	const supabase = await createClient(true) // Use service key for server operations
 	
-	// Check if account already exists
+	// Check if mailbox already exists
 	const { data: existingAccount } = await supabase
 		.from('connected_accounts')
 		.select('*')
@@ -70,7 +70,7 @@ export async function saveConnectedAccount(
 	}
 
 	if (existingAccount) {
-		// Update existing account
+		// Update existing mailbox
 		const { data, error } = await supabase
 			.from('connected_accounts')
 			.update(accountData)
@@ -79,13 +79,13 @@ export async function saveConnectedAccount(
 			.single()
 
 		if (error) {
-			throw new Error(`Failed to update connected account: ${error.message}`)
+			throw new Error(`Failed to update connected mailbox: ${error.message}`)
 		}
 
 		console.log(`📝 Updated credentials for ${userInfo.email}`)
 		return data
 	} else {
-		// Insert new account
+		// Insert new mailbox
 		const { data, error } = await supabase
 			.from('connected_accounts')
 			.insert(accountData)
@@ -93,7 +93,7 @@ export async function saveConnectedAccount(
 			.single()
 
 		if (error) {
-			throw new Error(`Failed to save connected account: ${error.message}`)
+			throw new Error(`Failed to save connected mailbox: ${error.message}`)
 		}
 
 		console.log(`✅ Saved new credentials for ${userInfo.email}`)
@@ -102,9 +102,9 @@ export async function saveConnectedAccount(
 }
 
 /**
- * Get all connected accounts for a user
+ * Get all connected mailboxes for a user
  */
-export async function getUserConnectedAccounts(userId: string): Promise<ConnectedAccountWithStatus[]> {
+export async function getUserMailboxes(userId: string): Promise<MailboxWithStatus[]> {
 	const supabase = await createClient(true)
 	
 	const { data, error } = await supabase
@@ -114,11 +114,11 @@ export async function getUserConnectedAccounts(userId: string): Promise<Connecte
 		.order('created_at', { ascending: false })
 
 	if (error) {
-		throw new Error(`Failed to fetch connected accounts: ${error.message}`)
+		throw new Error(`Failed to fetch connected mailboxes: ${error.message}`)
 	}
 
-	// Add status information to each account
-	const accountsWithStatus: ConnectedAccountWithStatus[] = data.map((account: ConnectedAccountRow) => {
+	// Add status information to each mailbox
+	const mailboxesWithStatus: MailboxWithStatus[] = data.map((account: ConnectedAccountRow) => {
 		const now = new Date()
 		const expiresAt = new Date(account.expires_at)
 		const isExpired = now > expiresAt
@@ -131,14 +131,14 @@ export async function getUserConnectedAccounts(userId: string): Promise<Connecte
 		}
 	})
 
-	console.log(`📧 Found ${accountsWithStatus.length} connected accounts for user ${userId}`)
-	return accountsWithStatus
+	console.log(`📧 Found ${mailboxesWithStatus.length} connected mailboxes for user ${userId}`)
+	return mailboxesWithStatus
 }
 
 /**
- * Get a specific connected account
+ * Get a specific connected mailbox
  */
-export async function getConnectedAccount(
+export async function getConnectedMailbox(
 	userId: string,
 	accountId: number
 ): Promise<ConnectedAccountRow | null> {
@@ -153,9 +153,9 @@ export async function getConnectedAccount(
 
 	if (error) {
 		if (error.code === 'PGRST116') {
-			return null // Account not found
+			return null // Mailbox not found
 		}
-		throw new Error(`Failed to fetch connected account: ${error.message}`)
+		throw new Error(`Failed to fetch connected mailbox: ${error.message}`)
 	}
 
 	return data
@@ -224,7 +224,7 @@ export async function getValidCredentials(
 	userId: string,
 	accountId: number
 ): Promise<ConnectedAccountRow | null> {
-	let account = await getConnectedAccount(userId, accountId)
+	let account = await getConnectedMailbox(userId, accountId)
 	
 	if (!account) {
 		return null
@@ -244,9 +244,9 @@ export async function getValidCredentials(
 }
 
 /**
- * Delete a connected account
+ * Delete a connected mailbox
  */
-export async function deleteConnectedAccount(
+export async function deleteConnectedMailbox(
 	userId: string,
 	accountId: number
 ): Promise<void> {
@@ -259,24 +259,32 @@ export async function deleteConnectedAccount(
 		.eq('id', accountId)
 
 	if (error) {
-		throw new Error(`Failed to delete connected account: ${error.message}`)
+		throw new Error(`Failed to delete connected mailbox: ${error.message}`)
 	}
 
-	console.log(`🗑️ Deleted connected account ${accountId}`)
+	console.log(`🗑️ Deleted connected mailbox ${accountId}`)
 }
 
 /**
- * Update account status (for sync tracking)
+ * Update mailbox status (for sync tracking)
  */
-export async function updateAccountStatus(
+export async function updateMailboxStatus(
 	accountId: number,
 	status: 'active' | 'error',
 	lastSyncAt?: Date
 ): Promise<void> {
 	// TODO: Implement status tracking in a separate table or add columns to connected_accounts
 	// For now, we'll just log the status update
-	console.log(`📊 Account ${accountId} status updated to: ${status}`)
+	console.log(`📊 Mailbox ${accountId} status updated to: ${status}`)
 	if (lastSyncAt) {
 		console.log(`📊 Last sync: ${lastSyncAt.toISOString()}`)
 	}
-} 
+}
+
+// Legacy function names for backward compatibility
+export const getUserConnectedAccounts = getUserMailboxes
+export const saveConnectedAccount = saveConnectedMailbox
+export const getConnectedAccount = getConnectedMailbox
+export const deleteConnectedAccount = deleteConnectedMailbox
+export const updateAccountStatus = updateMailboxStatus
+export type ConnectedAccountWithStatus = MailboxWithStatus 
