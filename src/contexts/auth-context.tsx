@@ -8,6 +8,7 @@ import React, {
 	ReactNode,
 } from 'react'
 import { createClient as createBrowserClient } from '@/utils/supabase/client'
+import type { Database } from '@/types/supabase'
 import type {
 	LoginSchemaType,
 	SignupSchemaType,
@@ -15,20 +16,54 @@ import type {
 	UpdatePasswordSchemaType,
 } from '@/schema/auth-schemas'
 
+/**
+ * Auth Context Provider that manages user authentication and subscription data
+ * 
+ * Features:
+ * - User authentication state
+ * - User subscription data with automatic fetching
+ * - Functions to refetch subscription data
+ * - Loading states for both auth and subscription
+ * 
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { 
+ *     authUser, 
+ *     userSubscription, 
+ *     isSubscriptionLoading,
+ *     refetchSubscription 
+ *   } = useAuth()
+ *   
+ *   if (userSubscription?.status === 'active') {
+ *     return <div>Premium user with {userSubscription.plan_name} plan</div>
+ *   }
+ *   
+ *   return <div>Free user</div>
+ * }
+ * ```
+ */
+
 // Use the Supabase client type
 type SupabaseClient = ReturnType<typeof createBrowserClient>
+
+// Subscription table type from Supabase
+export type Subscription = Database['public']['Tables']['subscriptions']['Row']
 
 // Define the shape of the context value
 interface AuthContextType {
 	authUser: any | null
 	isLoading: boolean
 	isAuthenticated: boolean
+	userSubscription: Subscription | null
+	isSubscriptionLoading: boolean
 	supabase: SupabaseClient
 	signUp: (credentials: SignupSchemaType, redirectUrl?: string) => Promise<any>
 	signInWithPassword: (credentials: LoginSchemaType) => Promise<any>
 	signOut: () => Promise<any>
 	sendPasswordResetEmail: (credentials: ResetPasswordSchemaType) => Promise<any>
 	updatePassword: (credentials: UpdatePasswordSchemaType) => Promise<any>
+	refetchSubscription: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,6 +79,31 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 	const supabase = createBrowserClient()
 	const [authUser, setAuthUser] = useState<any | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
+	const [userSubscription, setUserSubscription] = useState<Subscription | null>(null)
+	const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(false)
+
+	// Function to fetch subscription data
+	const fetchSubscriptionData = async (userId: string) => {
+		setIsSubscriptionLoading(true)
+		try {
+			// Import settingsService instance
+			const { settingsService } = await import('@/lib/services/settings')
+			const subscriptionData = await settingsService.getSubscriptionData(userId)
+			setUserSubscription(subscriptionData)
+		} catch (error) {
+			console.error('Error fetching subscription data:', error)
+			setUserSubscription(null)
+		} finally {
+			setIsSubscriptionLoading(false)
+		}
+	}
+
+	// Function to refetch subscription data
+	const refetchSubscription = async () => {
+		if (authUser?.id) {
+			await fetchSubscriptionData(authUser.id)
+		}
+	}
 
 	useEffect(() => {
 		// Get initial session
@@ -54,7 +114,13 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 				console.error('Error fetching initial session:', error)
 				setAuthUser(null)
 			} else {
-				setAuthUser(data.session?.user ?? null)
+				const user = data.session?.user ?? null
+				setAuthUser(user)
+				
+				// Fetch subscription data if user is authenticated
+				if (user?.id) {
+					await fetchSubscriptionData(user.id)
+				}
 			}
 			
 			setIsLoading(false)
@@ -66,7 +132,17 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 		const { data: authListener } = supabase.auth.onAuthStateChange(
 			async (event: any, session: any) => {
 				console.log('Auth event:', event, 'Session:', !!session)
-				setAuthUser(session?.user ?? null)
+				const user = session?.user ?? null
+				setAuthUser(user)
+				
+				// Fetch subscription data if user is authenticated
+				if (user?.id) {
+					await fetchSubscriptionData(user.id)
+				} else {
+					// Clear subscription data if user is not authenticated
+					setUserSubscription(null)
+				}
+				
 				setIsLoading(false)
 			}
 		)
@@ -80,6 +156,8 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 		authUser,
 		isLoading,
 		isAuthenticated: !!authUser,
+		userSubscription,
+		isSubscriptionLoading,
 		supabase,
 		signUp: (credentials, redirectUrl) => {
 			return supabase.auth.signUp({
@@ -100,6 +178,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 			supabase.auth.resetPasswordForEmail(credentials.email),
 		updatePassword: (credentials) => 
 			supabase.auth.updateUser({ password: credentials.password }),
+		refetchSubscription,
 	}
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

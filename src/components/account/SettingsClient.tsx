@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/use-auth'
 import { useSettings } from '@/hooks/use-settings'
-import { settingsService } from '@/lib/services/settings'
 import { FloatingSaveBar } from '@/components/ui/floating-save-bar'
 import {
 	AccountInformationCard,
@@ -21,7 +20,14 @@ import {
 
 export default function SettingsClient() {
 	const router = useRouter()
-	const { authUser, isLoading: authLoading, isAuthenticated, signOut } = useAuth()
+	const { 
+		authUser, 
+		isLoading: authLoading, 
+		isAuthenticated, 
+		userSubscription,
+		isSubscriptionLoading,
+		signOut 
+	} = useAuth()
 	const {
 		settings,
 		isLoading: settingsLoading,
@@ -35,19 +41,6 @@ export default function SettingsClient() {
 		discardChanges,
 	} = useSettings()
 
-	const [subscriptionData, setSubscriptionData] = useState<{
-		isSubscribed: boolean
-		plan: string | null
-		status: string | null
-		renewsOn: string | null
-		billingCycle: string | null
-	}>({
-		isSubscribed: false,
-		plan: null,
-		status: null,
-		renewsOn: null,
-		billingCycle: null,
-	})
 	const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
 	// Redirect if not authenticated
@@ -56,22 +49,6 @@ export default function SettingsClient() {
 			router.push('/auth/login')
 		}
 	}, [authLoading, isAuthenticated, router])
-
-	// Load subscription data
-	useEffect(() => {
-		if (!authUser?.id) return
-
-		const loadSubscriptionData = async () => {
-			try {
-				const data = await settingsService.getSubscriptionData(authUser.id)
-				setSubscriptionData(data)
-			} catch (error) {
-				console.error('Failed to load subscription data:', error)
-			}
-		}
-
-		loadSubscriptionData()
-	}, [authUser?.id])
 
 	const handleManageSubscription = () => {
 		// TODO: Integrate with subscription service (Stripe, etc.)
@@ -112,7 +89,7 @@ export default function SettingsClient() {
 		}
 	}
 
-	if (authLoading || settingsLoading) {
+	if (authLoading || settingsLoading || isSubscriptionLoading) {
 		return <SettingsLoadingSkeleton />
 	}
 
@@ -146,19 +123,9 @@ export default function SettingsClient() {
 							/>
 
 							{/* Subscription Card - Only show if subscribed */}
-							{subscriptionData.isSubscribed && 
-							 subscriptionData.plan && 
-							 subscriptionData.status && 
-							 subscriptionData.renewsOn && 
-							 subscriptionData.billingCycle && (
+							{userSubscription && (
 								<SubscriptionCard
-									subscriptionData={{
-										isSubscribed: subscriptionData.isSubscribed,
-										plan: subscriptionData.plan,
-										status: subscriptionData.status,
-										renewsOn: subscriptionData.renewsOn,
-										billingCycle: subscriptionData.billingCycle,
-									}}
+									subscriptionData={userSubscription}
 									onManageSubscription={handleManageSubscription}
 									onCancelSubscription={handleCancelSubscription}
 								/>

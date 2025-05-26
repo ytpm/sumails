@@ -3,17 +3,10 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { CreditCard } from 'lucide-react'
-
-interface SubscriptionData {
-	isSubscribed: boolean
-	plan: string
-	status: string
-	renewsOn: string
-	billingCycle: string
-}
+import type { Subscription } from '@/contexts/auth-context'
 
 interface SubscriptionCardProps {
-	subscriptionData: SubscriptionData
+	subscriptionData: Subscription | null
 	onManageSubscription: () => void
 	onCancelSubscription: () => void
 }
@@ -23,7 +16,7 @@ export default function SubscriptionCard({
 	onManageSubscription, 
 	onCancelSubscription 
 }: SubscriptionCardProps) {
-	if (!subscriptionData.isSubscribed) {
+	if (!subscriptionData || subscriptionData.status !== 'active') {
 		return null
 	}
 
@@ -42,7 +35,7 @@ export default function SubscriptionCard({
 				<div className="grid grid-cols-2 gap-4">
 					<div>
 						<Label className="text-sm font-medium text-muted-foreground">Plan</Label>
-						<p className="text-lg font-semibold">{subscriptionData.plan}</p>
+						<p className="text-lg font-semibold">{subscriptionData.plan_name}</p>
 					</div>
 					<div>
 						<Label className="text-sm font-medium text-muted-foreground">Status</Label>
@@ -52,16 +45,18 @@ export default function SubscriptionCard({
 					</div>
 				</div>
 				
-				<div>
-					<Label className="text-sm font-medium text-muted-foreground">Renews on</Label>
-					<p className="text-base">
-						{new Date(subscriptionData.renewsOn).toLocaleDateString('en-US', {
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric'
-						})}
-					</p>
-				</div>
+				{subscriptionData.current_period_end && (
+					<div>
+						<Label className="text-sm font-medium text-muted-foreground">Renews on</Label>
+						<p className="text-base">
+							{new Date(subscriptionData.current_period_end).toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric'
+							})}
+						</p>
+					</div>
+				)}
 
 				<Separator />
 

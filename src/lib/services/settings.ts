@@ -7,6 +7,7 @@ type UserSettingsInsert = Database['public']['Tables']['user_settings']['Insert'
 type UserSettingsUpdate = Database['public']['Tables']['user_settings']['Update']
 type Profile = Database['public']['Tables']['profiles']['Row']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+type Subscription = Database['public']['Tables']['subscriptions']['Row']
 
 export interface SettingsData {
 	notifications: {
@@ -166,7 +167,7 @@ class SettingsService {
 		}
 	}
 
-	async getSubscriptionData(userId: string) {
+	async getSubscriptionData(userId: string): Promise<Subscription | null> {
 		try {
 			const { data: subscription, error } = await this.supabase
 				.from('subscriptions')
@@ -179,23 +180,7 @@ class SettingsService {
 				throw error
 			}
 
-			if (!subscription) {
-				return {
-					isSubscribed: false,
-					plan: null,
-					status: null,
-					renewsOn: null,
-					billingCycle: null,
-				}
-			}
-
-			return {
-				isSubscribed: true,
-				plan: subscription.plan_name,
-				status: subscription.status,
-				renewsOn: subscription.current_period_end,
-				billingCycle: subscription.interval,
-			}
+			return subscription
 		} catch (error) {
 			console.error('Error fetching subscription data:', error)
 			throw error
