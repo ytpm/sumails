@@ -3,7 +3,9 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Settings, Clock, Globe, MessageSquare } from 'lucide-react'
+import { Settings, Clock, Globe, MessageSquare, CheckCircle } from 'lucide-react'
+import { useState } from 'react'
+import PhoneVerification from './PhoneVerification'
 
 interface SummarySettings {
 	receiveBy: {
@@ -13,6 +15,7 @@ interface SummarySettings {
 	preferredTime: string
 	timezone: string
 	language: string
+	whatsappPhone?: string // Add this to track verified phone number
 }
 
 interface SummarySettingsCardProps {
@@ -26,6 +29,35 @@ export default function SummarySettingsCard({
 	onReceiveByChange, 
 	onSettingChange 
 }: SummarySettingsCardProps) {
+	const [showPhoneVerification, setShowPhoneVerification] = useState(false)
+
+	const handleWhatsAppToggle = () => {
+		if (!settings.receiveBy.whatsapp) {
+			// Enabling WhatsApp - show verification if no phone is verified
+			if (!settings.whatsappPhone) {
+				setShowPhoneVerification(true)
+			}
+		} else {
+			// Disabling WhatsApp
+			setShowPhoneVerification(false)
+		}
+		onReceiveByChange('whatsapp')
+	}
+
+	const handlePhoneVerificationComplete = (phoneNumber: string) => {
+		// Save the verified phone number
+		onSettingChange('whatsappPhone' as any, phoneNumber)
+		setShowPhoneVerification(false)
+	}
+
+	const handleCancelVerification = () => {
+		setShowPhoneVerification(false)
+		// If WhatsApp was just enabled but verification was cancelled, disable it
+		if (settings.receiveBy.whatsapp && !settings.whatsappPhone) {
+			onReceiveByChange('whatsapp')
+		}
+	}
+
 	return (
 		<Card>
 			<CardHeader>
@@ -57,17 +89,35 @@ export default function SummarySettingsCard({
 						</div>
 						<div className="flex items-center justify-between">
 							<div className="space-y-0.5">
-								<Label htmlFor="summary-whatsapp">WhatsApp</Label>
+								<Label htmlFor="summary-whatsapp" className="flex items-center gap-2">
+									WhatsApp
+									{settings.whatsappPhone && (
+										<CheckCircle className="h-4 w-4 text-green-600" />
+									)}
+								</Label>
 								<p className="text-sm text-muted-foreground">
 									Get summaries via WhatsApp messages
+									{settings.whatsappPhone && (
+										<span className="block text-xs text-green-600 mt-1">
+											Verified: {settings.whatsappPhone}
+										</span>
+									)}
 								</p>
 							</div>
 							<Switch
 								id="summary-whatsapp"
 								checked={settings.receiveBy.whatsapp}
-								onCheckedChange={() => onReceiveByChange('whatsapp')}
+								onCheckedChange={handleWhatsAppToggle}
 							/>
 						</div>
+						
+						{/* Phone Verification Component */}
+						{showPhoneVerification && (
+							<PhoneVerification
+								onVerificationComplete={handlePhoneVerificationComplete}
+								onCancel={handleCancelVerification}
+							/>
+						)}
 					</div>
 				</div>
 
