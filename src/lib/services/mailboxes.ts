@@ -140,7 +140,7 @@ export async function getUserMailboxes(userId: string): Promise<MailboxWithStatu
  */
 export async function getConnectedMailbox(
 	userId: string,
-	accountId: number
+	accountId: string
 ): Promise<ConnectedAccountRow | null> {
 	const supabase = await createClient(true)
 	
@@ -222,7 +222,7 @@ export async function refreshAccessToken(account: ConnectedAccountRow): Promise<
  */
 export async function getValidCredentials(
 	userId: string,
-	accountId: number
+	accountId: string
 ): Promise<ConnectedAccountRow | null> {
 	let account = await getConnectedMailbox(userId, accountId)
 	
@@ -248,7 +248,7 @@ export async function getValidCredentials(
  */
 export async function deleteConnectedMailbox(
 	userId: string,
-	accountId: number
+	accountId: string
 ): Promise<void> {
 	const supabase = await createClient(true)
 	
@@ -269,7 +269,7 @@ export async function deleteConnectedMailbox(
  * Update mailbox status (for sync tracking)
  */
 export async function updateMailboxStatus(
-	accountId: number,
+	accountId: string,
 	status: 'active' | 'error',
 	lastSyncAt?: Date
 ): Promise<void> {

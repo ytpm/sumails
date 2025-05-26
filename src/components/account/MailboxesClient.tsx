@@ -20,14 +20,14 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 	const { isLoading, isAuthenticated } = useAuth()
 	const [accounts, setAccounts] = useState<MailboxWithStatus[]>(initialAccounts)
 	const [isConnecting, setIsConnecting] = useState(false)
-	const [disconnectingId, setDisconnectingId] = useState<number | null>(null)
-	const [syncingId, setSyncingId] = useState<number | null>(null)
+	const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
+	const [syncingId, setSyncingId] = useState<string | null>(null)
 	const [isRefreshingTokens, setIsRefreshingTokens] = useState(false)
 
 	// Function to refresh accounts from server
 	const refreshAccounts = async () => {
 		try {
-			const response = await fetch('/api/connected-accounts')
+			const response = await fetch('/api/mailboxes')
 			if (response.ok) {
 				const data = await response.json()
 				setAccounts(data.accounts || [])
@@ -42,7 +42,7 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		try {
 			setIsRefreshingTokens(true)
 			
-			const response = await fetch('/api/connected-accounts/refresh-tokens', {
+			const response = await fetch('/api/mailboxes/refresh-tokens', {
 				method: 'POST',
 			})
 
@@ -118,7 +118,7 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 			setIsConnecting(true)
 			
 			// Call API to get OAuth URL
-			const response = await fetch('/api/connected-accounts', {
+			const response = await fetch('/api/mailboxes', {
 				method: 'POST',
 			})
 
@@ -137,11 +137,11 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		}
 	}
 
-	const handleDisconnectAccount = async (accountId: number, email: string) => {
+	const handleDisconnectAccount = async (accountId: string, email: string) => {
 		try {
 			setDisconnectingId(accountId)
 			
-			const response = await fetch(`/api/connected-accounts/${accountId}`, {
+			const response = await fetch(`/api/mailboxes/${accountId}`, {
 				method: 'DELETE',
 			})
 
@@ -159,11 +159,11 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		}
 	}
 
-	const handleSyncAccount = async (accountId: number, email: string) => {
+	const handleSyncAccount = async (accountId: string, email: string) => {
 		try {
 			setSyncingId(accountId)
 			
-			const response = await fetch(`/api/connected-accounts/${accountId}/sync`, {
+			const response = await fetch(`/api/mailboxes/${accountId}/sync`, {
 				method: 'POST',
 			})
 

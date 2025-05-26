@@ -3,7 +3,7 @@ import { google } from 'googleapis'
 import { getUserConnectedAccounts, deleteConnectedAccount } from '@/lib/services/mailboxes'
 import { createClient } from '@/utils/supabase/server'
 
-// GET /api/connected-accounts - Fetch user's connected accounts
+// GET /api/mailboxes - Fetch user's mailboxes
 export async function GET(request: NextRequest) {
 	try {
 		// Get the current user from Supabase
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 	}
 }
 
-// POST /api/connected-accounts - Initiate OAuth flow
+// POST /api/mailboxes - Initiate OAuth flow
 export async function POST(request: NextRequest) {
 	try {
 		// Get the current user from Supabase

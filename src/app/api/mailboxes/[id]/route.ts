@@ -3,15 +3,15 @@ import { createClient } from '@/utils/supabase/server'
 import { deleteConnectedAccount, getValidCredentials, updateAccountStatus } from '@/lib/services/mailboxes'
 import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
 
-// DELETE /api/connected-accounts/[id] - Delete a connected account
+// DELETE /api/mailboxes/[id] - Delete a connected account
 export async function DELETE(
 	request: NextRequest,
 	{ params }: { params: { id: string } }
 ) {
 	try {
-		const accountId = parseInt(params.id)
+		const accountId = params.id
 		
-		if (isNaN(accountId)) {
+		if (!accountId) {
 			return NextResponse.json(
 				{ error: 'Invalid account ID' },
 				{ status: 400 }
@@ -43,15 +43,15 @@ export async function DELETE(
 	}
 }
 
-// POST /api/connected-accounts/[id]/sync - Sync a connected account
+// POST /api/mailboxes/[id]/sync - Sync a connected account
 export async function POST(
 	request: NextRequest,
 	{ params }: { params: { id: string } }
 ) {
 	try {
-		const accountId = parseInt(params.id)
+		const accountId = params.id
 		
-		if (isNaN(accountId)) {
+		if (!accountId) {
 			return NextResponse.json(
 				{ error: 'Invalid account ID' },
 				{ status: 400 }
