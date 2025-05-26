@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '@/hooks/use-auth'
 import { useSettings } from '@/hooks/use-settings'
 import { settingsService } from '@/lib/services/settings'
 import { FloatingSaveBar } from '@/components/ui/floating-save-bar'

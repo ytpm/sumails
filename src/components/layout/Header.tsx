@@ -4,7 +4,7 @@ import { cn } from "@/utils";
 import { Inbox, Menu, X, User, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
 const Header = () => {

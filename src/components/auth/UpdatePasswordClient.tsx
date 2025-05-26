@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '@/hooks/use-auth'
 import { UpdatePasswordSchema, type UpdatePasswordSchemaType } from '@/schema/auth-schemas'
 
 export default function UpdatePasswordClient() {

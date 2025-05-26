@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { settingsService, SettingsData } from '@/lib/services/settings'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '@/hooks/use-auth'
 
 export function useSettings() {
 	const { authUser } = useAuth()

@@ -33,6 +33,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Export the context for use in custom hooks
+export { AuthContext }
+
 interface AuthProviderProps {
 	children: ReactNode
 }
@@ -105,12 +108,4 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 // Main AuthProvider
 export function AuthProvider({ children }: AuthProviderProps) {
 	return <AuthProviderInternal>{children}</AuthProviderInternal>
-}
-
-export function useAuth() {
-	const context = useContext(AuthContext)
-	if (context === undefined) {
-		throw new Error('useAuth must be used within an AuthProvider')
-	}
-	return context
 }
