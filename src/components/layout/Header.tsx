@@ -33,6 +33,17 @@ const Header = () => {
 		}
 	};
 
+	const scrollToSection = (sectionId: string) => {
+		const element = document.getElementById(sectionId);
+		if (element) {
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'start',
+			});
+		}
+		setIsMobileMenuOpen(false);
+	};
+
 	const AuthButtons = () => {
 		if (isLoading) {
 			return (
@@ -138,36 +149,36 @@ const Header = () => {
 
 					{/* Desktop Navigation */}
 					<nav className="hidden items-center space-x-8 md:flex">
-						<a
-							href="#features"
+						<button
+							onClick={() => scrollToSection('features')}
 							className="text-sm font-medium text-gray-700 transition-colors hover:text-primary-600"
 						>
 							Features
-						</a>
-						<a
-							href="#how-it-works"
+						</button>
+						<button
+							onClick={() => scrollToSection('how-it-works')}
 							className="text-sm font-medium text-gray-700 transition-colors hover:text-primary-600"
 						>
 							How It Works
-						</a>
-						<a
-							href="#testimonials"
+						</button>
+						<button
+							onClick={() => scrollToSection('testimonials')}
 							className="text-sm font-medium text-gray-700 transition-colors hover:text-primary-600"
 						>
 							Testimonials
-						</a>
-						<a
-							href="#pricing"
+						</button>
+						<button
+							onClick={() => scrollToSection('pricing')}
 							className="text-sm font-medium text-gray-700 transition-colors hover:text-primary-600"
 						>
 							Pricing
-						</a>
-						<a
-							href="#faq"
+						</button>
+						<button
+							onClick={() => scrollToSection('faq')}
 							className="text-sm font-medium text-gray-700 transition-colors hover:text-primary-600"
 						>
 							FAQ
-						</a>
+						</button>
 					</nav>
 
 					{/* Desktop Auth Buttons */}
@@ -192,41 +203,36 @@ const Header = () => {
 				{isMobileMenuOpen && (
 					<div className="animate-slide-down mt-4 py-4 md:hidden">
 						<nav className="flex flex-col space-y-4">
-							<a
-								href="#features"
-								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600"
-								onClick={() => setIsMobileMenuOpen(false)}
+							<button
+								onClick={() => scrollToSection('features')}
+								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600 text-left"
 							>
 								Features
-							</a>
-							<a
-								href="#how-it-works"
-								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600"
-								onClick={() => setIsMobileMenuOpen(false)}
+							</button>
+							<button
+								onClick={() => scrollToSection('how-it-works')}
+								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600 text-left"
 							>
 								How It Works
-							</a>
-							<a
-								href="#testimonials"
-								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600"
-								onClick={() => setIsMobileMenuOpen(false)}
+							</button>
+							<button
+								onClick={() => scrollToSection('testimonials')}
+								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600 text-left"
 							>
 								Testimonials
-							</a>
-							<a
-								href="#pricing"
-								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600"
-								onClick={() => setIsMobileMenuOpen(false)}
+							</button>
+							<button
+								onClick={() => scrollToSection('pricing')}
+								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600 text-left"
 							>
 								Pricing
-							</a>
-							<a
-								href="#faq"
-								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600"
-								onClick={() => setIsMobileMenuOpen(false)}
+							</button>
+							<button
+								onClick={() => scrollToSection('faq')}
+								className="text-base font-medium text-gray-700 transition-colors hover:text-primary-600 text-left"
 							>
 								FAQ
-							</a>
+							</button>
 							
 							{/* Mobile Auth Buttons */}
 							<MobileAuthButtons />
