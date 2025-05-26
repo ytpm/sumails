@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { getUserMailboxes, isTokenExpired, refreshAccessToken } from '@/lib/mailboxes/service'
+import { getUserMailboxes, isTokenExpired, refreshAccessToken } from '@/lib/services/mailboxes'
 
 // POST /api/connected-accounts/refresh-tokens - Refresh all expired tokens for user's mailboxes
 export async function POST(request: NextRequest) {

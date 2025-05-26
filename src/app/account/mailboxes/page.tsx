@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { createClient } from '@/utils/supabase/server'
-import { getUserConnectedAccounts } from '@/lib/mailboxes/service'
+import { getUserConnectedAccounts } from '@/lib/services/mailboxes'
 import MailboxesClient from '@/components/account/MailboxesClient'
 import { redirect } from 'next/navigation'
 

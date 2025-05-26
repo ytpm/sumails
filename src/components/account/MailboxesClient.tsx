@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/auth-context'
 import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
-import type { MailboxWithStatus } from '@/lib/mailboxes/service'
+import type { MailboxWithStatus } from '@/lib/services/mailboxes'
 
 interface MailboxesClientProps {
 	initialAccounts: MailboxWithStatus[]

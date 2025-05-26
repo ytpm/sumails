@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { createClient } from '@/utils/supabase/server'
-import { saveConnectedAccount, getUserInfo } from '@/lib/mailboxes/service'
+import { saveConnectedAccount, getUserInfo } from '@/lib/services/mailboxes'
 
 export async function GET(request: NextRequest) {
 	try {

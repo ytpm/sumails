@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
-import { getUserConnectedAccounts, deleteConnectedAccount } from '@/lib/mailboxes/service'
+import { getUserConnectedAccounts, deleteConnectedAccount } from '@/lib/services/mailboxes'
 import { createClient } from '@/utils/supabase/server'
 
 // GET /api/connected-accounts - Fetch user's connected accounts
