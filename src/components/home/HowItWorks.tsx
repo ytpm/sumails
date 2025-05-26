@@ -57,11 +57,8 @@ const HowItWorks = () => {
         </div>
 
         <div ref={ref} className="relative">
-          {/* Connector Line */}
-          <div className="absolute bottom-24 left-1/2 top-24 hidden w-0.5 -translate-x-1/2 bg-gray-200 lg:block"></div>
-
           {/* Steps */}
-          <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-3">
+          <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-8">
             {steps.map((step, index) => (
               <motion.div
                 key={index}
@@ -69,18 +66,21 @@ const HowItWorks = () => {
                 variants={stepVariants}
                 initial="hidden"
                 animate={inView ? "visible" : "hidden"}
-                className="flex flex-col items-center text-center"
+                className="flex flex-col items-center text-center relative"
               >
-                <div className="relative mb-6">
+                <div className="relative mb-6 z-10">
+                  {/* Step number above the circle */}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+                    <span className="text-lg font-bold text-primary-600">
+                      {index + 1}
+                    </span>
+                  </div>
+                  
+                  {/* Icon circle */}
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary-600">
                       {step.icon}
                     </div>
-                  </div>
-                  <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center">
-                    <span className="text-lg font-bold text-gray-900">
-                      {index + 1}
-                    </span>
                   </div>
                 </div>
 
@@ -96,6 +96,13 @@ const HowItWorks = () => {
                 )}
               </motion.div>
             ))}
+          </div>
+
+          {/* Horizontal connector lines for desktop */}
+          <div className="absolute top-8 left-0 right-0 hidden lg:flex justify-between items-center px-[16.67%] z-0">
+            <div className="flex-1 h-0.5 bg-gray-200"></div>
+            <div className="w-16"></div>
+            <div className="flex-1 h-0.5 bg-gray-200"></div>
           </div>
 
           <div className="mt-16 text-center">
