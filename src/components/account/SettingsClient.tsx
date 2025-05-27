@@ -42,6 +42,14 @@ export default function SettingsClient() {
 	} = useSettings()
 
 	const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+	const [hasInitialized, setHasInitialized] = useState(false)
+
+	// Track when we've successfully loaded once
+	useEffect(() => {
+		if (!authLoading && isAuthenticated && settings) {
+			setHasInitialized(true)
+		}
+	}, [authLoading, isAuthenticated, settings])
 
 	// Redirect if not authenticated
 	useEffect(() => {
@@ -89,12 +97,24 @@ export default function SettingsClient() {
 		}
 	}
 
-	if (authLoading || settingsLoading || isSubscriptionLoading) {
+	// Show loading skeleton only on initial load or when actually loading
+	const shouldShowSkeleton = (
+		(authLoading && !hasInitialized) || 
+		(isAuthenticated && settingsLoading && !hasInitialized) || 
+		(isSubscriptionLoading && !hasInitialized)
+	)
+
+	if (shouldShowSkeleton) {
 		return <SettingsLoadingSkeleton />
 	}
 
-	if (!isAuthenticated || !settings) {
+	if (!isAuthenticated) {
 		return null // Will redirect in useEffect
+	}
+
+	// If authenticated but no settings yet and we haven't initialized, show skeleton
+	if (isAuthenticated && !settings && !hasInitialized) {
+		return <SettingsLoadingSkeleton />
 	}
 
 	return (
@@ -117,9 +137,11 @@ export default function SettingsClient() {
 
 							{/* Summary Settings */}
 							<SummarySettingsCard
-								settings={settings.summarySettings}
+								settings={settings!.summarySettings}
+								whatsappPhone={settings!.profile.whatsappNumber}
 								onReceiveByChange={updateSummaryReceiveBy}
 								onSettingChange={updateSummarySetting}
+								onProfileChange={updateProfile}
 							/>
 
 							{/* Subscription Card - Only show if subscribed */}
@@ -133,7 +155,7 @@ export default function SettingsClient() {
 
 							{/* Notification Preferences */}
 							<NotificationPreferencesCard
-								notifications={settings.notifications}
+								notifications={settings!.notifications}
 								onNotificationChange={updateNotifications}
 							/>
 

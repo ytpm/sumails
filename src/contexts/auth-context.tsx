@@ -81,6 +81,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 	const [isLoading, setIsLoading] = useState(true)
 	const [userSubscription, setUserSubscription] = useState<Subscription | null>(null)
 	const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(false)
+	const [isInitialized, setIsInitialized] = useState(false)
 
 	// Function to fetch subscription data
 	const fetchSubscriptionData = async (userId: string) => {
@@ -124,6 +125,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 			}
 			
 			setIsLoading(false)
+			setIsInitialized(true)
 		}
 
 		getInitialSession()
@@ -132,6 +134,22 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 		const { data: authListener } = supabase.auth.onAuthStateChange(
 			async (event: any, session: any) => {
 				console.log('Auth event:', event, 'Session:', !!session)
+				
+				// Don't set loading to true for token refresh events if already initialized
+				if (isInitialized && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) {
+					const user = session?.user ?? null
+					setAuthUser(user)
+					
+					// Fetch subscription data if user is authenticated
+					if (user?.id) {
+						await fetchSubscriptionData(user.id)
+					} else {
+						// Clear subscription data if user is not authenticated
+						setUserSubscription(null)
+					}
+					return
+				}
+				
 				const user = session?.user ?? null
 				setAuthUser(user)
 				
@@ -144,13 +162,14 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 				}
 				
 				setIsLoading(false)
+				setIsInitialized(true)
 			}
 		)
 
 		return () => {
 			authListener?.subscription.unsubscribe()
 		}
-	}, [supabase])
+	}, [supabase, isInitialized])
 
 	const value: AuthContextType = {
 		authUser,

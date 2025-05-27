@@ -1,38 +1,88 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { settingsService, SettingsData } from '@/lib/services/settings'
 import { useAuth } from '@/hooks/use-auth'
 
 export function useSettings() {
-	const { authUser } = useAuth()
+	const { authUser, isLoading: authLoading } = useAuth()
 	const [settings, setSettings] = useState<SettingsData | null>(null)
 	const [originalSettings, setOriginalSettings] = useState<SettingsData | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [isSaving, setIsSaving] = useState(false)
 	const [hasChanges, setHasChanges] = useState(false)
+	const [isInitialized, setIsInitialized] = useState(false)
+	const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+	const lastAuthUserIdRef = useRef<string | null>(null)
 
 	// Load settings on mount
 	useEffect(() => {
-		if (!authUser?.id) return
+		// Clear any existing timeout
+		if (loadingTimeoutRef.current) {
+			clearTimeout(loadingTimeoutRef.current)
+		}
+
+		// If no auth user, set loading to false immediately
+		if (!authUser?.id) {
+			setIsLoading(false)
+			setIsInitialized(true)
+			return
+		}
+
+		// If this is the same user and we already have settings, don't reload
+		if (lastAuthUserIdRef.current === authUser.id && settings && isInitialized) {
+			return
+		}
 
 		const loadSettings = async () => {
 			try {
-				setIsLoading(true)
+				// Only show loading if we don't have settings yet or user changed
+				if (!settings || lastAuthUserIdRef.current !== authUser.id) {
+					setIsLoading(true)
+				}
+				
 				const data = await settingsService.getUserSettings(authUser.id)
 				if (data) {
 					setSettings(data)
 					setOriginalSettings(JSON.parse(JSON.stringify(data))) // Deep copy
 				}
+				lastAuthUserIdRef.current = authUser.id
 			} catch (error) {
 				console.error('Failed to load settings:', error)
 				toast.error('Failed to load settings')
 			} finally {
-				setIsLoading(false)
+				// Use a small delay to prevent flashing
+				loadingTimeoutRef.current = setTimeout(() => {
+					setIsLoading(false)
+					setIsInitialized(true)
+				}, 100)
 			}
 		}
 
 		loadSettings()
-	}, [authUser?.id])
+
+		// Cleanup timeout on unmount
+		return () => {
+			if (loadingTimeoutRef.current) {
+				clearTimeout(loadingTimeoutRef.current)
+			}
+		}
+	}, [authUser?.id, authLoading])
+
+	// Handle browser visibility changes
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			// When tab becomes visible again, don't reload if we already have data
+			if (!document.hidden && settings && authUser?.id) {
+				// Just ensure loading is false
+				setIsLoading(false)
+			}
+		}
+
+		document.addEventListener('visibilitychange', handleVisibilityChange)
+		return () => {
+			document.removeEventListener('visibilitychange', handleVisibilityChange)
+		}
+	}, [settings, authUser?.id])
 
 	// Check for changes whenever settings change
 	useEffect(() => {

@@ -15,26 +15,29 @@ interface SummarySettings {
 	preferredTime: string
 	timezone: string
 	language: string
-	whatsappPhone?: string // Add this to track verified phone number
 }
 
 interface SummarySettingsCardProps {
 	settings: SummarySettings
+	whatsappPhone?: string | null
 	onReceiveByChange: (key: keyof SummarySettings['receiveBy']) => void
 	onSettingChange: (key: keyof Omit<SummarySettings, 'receiveBy'>, value: string) => void
+	onProfileChange: (key: 'whatsappNumber', value: string | null) => void
 }
 
 export default function SummarySettingsCard({ 
 	settings, 
+	whatsappPhone, 
 	onReceiveByChange, 
-	onSettingChange 
+	onSettingChange, 
+	onProfileChange 
 }: SummarySettingsCardProps) {
 	const [showPhoneVerification, setShowPhoneVerification] = useState(false)
 
 	const handleWhatsAppToggle = () => {
 		if (!settings.receiveBy.whatsapp) {
 			// Enabling WhatsApp - show verification if no phone is verified
-			if (!settings.whatsappPhone) {
+			if (!whatsappPhone) {
 				setShowPhoneVerification(true)
 			}
 		} else {
@@ -46,14 +49,14 @@ export default function SummarySettingsCard({
 
 	const handlePhoneVerificationComplete = (phoneNumber: string) => {
 		// Save the verified phone number
-		onSettingChange('whatsappPhone' as any, phoneNumber)
+		onProfileChange('whatsappNumber', phoneNumber)
 		setShowPhoneVerification(false)
 	}
 
 	const handleCancelVerification = () => {
 		setShowPhoneVerification(false)
 		// If WhatsApp was just enabled but verification was cancelled, disable it
-		if (settings.receiveBy.whatsapp && !settings.whatsappPhone) {
+		if (settings.receiveBy.whatsapp && !whatsappPhone) {
 			onReceiveByChange('whatsapp')
 		}
 	}
@@ -91,15 +94,15 @@ export default function SummarySettingsCard({
 							<div className="space-y-0.5">
 								<Label htmlFor="summary-whatsapp" className="flex items-center gap-2">
 									WhatsApp
-									{settings.whatsappPhone && (
+									{whatsappPhone && (
 										<CheckCircle className="h-4 w-4 text-green-600" />
 									)}
 								</Label>
 								<p className="text-sm text-muted-foreground">
 									Get summaries via WhatsApp messages
-									{settings.whatsappPhone && (
+									{whatsappPhone && (
 										<span className="block text-xs text-green-600 mt-1">
-											Verified: {settings.whatsappPhone}
+											Verified: {whatsappPhone}
 										</span>
 									)}
 								</p>
