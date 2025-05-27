@@ -9,7 +9,7 @@ This document lists all unused classes, functions, components, and files found i
 
 ## 🗑️ Files to Delete
 
-### UI Components (Unused)
+### UI Components (Mixed Usage)
 
 #### `src/components/ui/floating-toc.tsx`
 **What it does:** A floating table of contents component that displays navigation items in a floating sidebar. Includes smooth scrolling functionality and responsive design.
@@ -35,6 +35,19 @@ This document lists all unused classes, functions, components, and files found i
 
 **Usage:**
 - Used in `src/components/account/SettingsClient.tsx` for summary settings configuration ✅ **NEWLY IMPLEMENTED**
+
+---
+
+#### `src/components/ui/floating-save-bar.tsx`
+**What it does:** A floating save bar component that appears at the bottom of the screen when there are unsaved changes. Provides save and discard functionality with loading states.
+
+**Why now used:** The FloatingSaveBar component is now imported and used in the SettingsClient component for managing unsaved changes. ✅ **NOW USED**
+
+**Functions:**
+- `FloatingSaveBar({ isVisible, isSaving, onSave, onDiscard, className })` - Main component for floating save bar ✅ **NOW USED**
+
+**Usage:**
+- Used in `src/components/account/SettingsClient.tsx` for settings change management ✅ **NEWLY IMPLEMENTED**
 
 ---
 
@@ -91,9 +104,9 @@ This document lists all unused classes, functions, components, and files found i
 **What it does:** Comprehensive Gmail API service with various email fetching and processing functions.
 
 **Used Functions:**
-- `getGmailAuthUrl()` - Used in `/api/auth/url/route.ts`
-- `fetchGmailEmails()` - Used in `/api/emails/route.ts`
-- `fetchTodaysEmailsWithContent()` - Used in multiple API routes
+- `getGmailAuthUrl()` - Used in `/api/auth/url/route.ts` ✅ **NOW USED**
+- `fetchGmailEmails()` - Used in `/api/emails/route.ts` ✅ **NOW USED**
+- `fetchTodaysEmailsWithContent()` - Used in multiple API routes ✅ **NOW USED**
 
 **Unused Functions:**
 - `gmailService` - Gmail service instance ❌ **UNUSED**
@@ -110,9 +123,9 @@ This document lists all unused classes, functions, components, and files found i
 **What it does:** Current Supabase-based mailbox and token management service.
 
 **Used Functions:**
-- `getUserMailboxes()` - Used in `/api/connected-accounts/route.ts` and mailboxes page
-- `saveConnectedMailbox()` - Used in OAuth callback
-- `deleteConnectedMailbox()` - Used in `/api/connected-accounts/[id]/route.ts`
+- `getUserMailboxes()` - Used in `/api/connected-accounts/route.ts` and mailboxes page ✅ **NOW USED**
+- `saveConnectedMailbox()` - Used in OAuth callback ✅ **NOW USED**
+- `deleteConnectedMailbox()` - Used in `/api/connected-accounts/[id]/route.ts` ✅ **NOW USED**
 - `isTokenExpired()` - Used in `/api/connected-accounts/refresh-tokens/route.ts` and MailboxesClient ✅ **NOW USED**
 - `refreshAccessToken()` - Used in `/api/connected-accounts/refresh-tokens/route.ts` and MailboxesClient ✅ **NOW USED**
 - `getValidCredentials()` - Used for getting valid credentials with automatic refresh ✅ **NOW USED**
@@ -174,7 +187,7 @@ This document lists all unused classes, functions, components, and files found i
 ### `src/types/hooks.ts`
 **What it should contain:** Type definitions for custom React hooks.
 
-**Why missing:** The file is imported in `src/hooks/usePageInfo.ts` but doesn't exist, causing a TypeScript error.
+**Why missing:** The file is imported in `src/hooks/usePageInfo.ts` but doesn't exist, causing a TypeScript error. However, `usePageInfo` is actively used in `src/components/dashboard/layout/DashboardMain.tsx`. ✅ **HOOK IS USED**
 
 **Expected content:**
 ```typescript
@@ -220,13 +233,13 @@ rmdir src/app/api/migration
    - `listTodaysEmailsWithContentToConsole`
    - `fetchEmailsFromPeriod`
 
-2. **Create missing type file `src/types/hooks.ts`**
+2. **Create missing type file `src/types/hooks.ts`** ✅ **NEEDED - HOOK IS ACTIVELY USED**
 
 ### Estimated Impact
-- **Files to delete:** 6 files
+- **Files to delete:** 4 files (down from 6 - FloatingSaveBar and Select are now used)
 - **Directories to remove:** 2 empty directories
 - **Functions to remove:** ~10 unused exported functions
-- **Size reduction:** ~15-20KB of unused code
+- **Size reduction:** ~10-15KB of unused code (reduced from previous estimate)
 - **Benefits:** Cleaner codebase, reduced bundle size, easier maintenance
 
 ---
@@ -241,3 +254,21 @@ This analysis was conducted by:
 5. Verifying API route usage patterns
 
 **Note:** Before deleting any code, especially API routes, verify they are not called by external services or frontend code that might not be immediately apparent in the static analysis.
+
+---
+
+## 📈 Recent Updates
+
+**Components Now in Use:**
+- ✅ `FloatingSaveBar` - Now used in SettingsClient for unsaved changes management
+- ✅ `Select` components - Now used in SettingsClient for dropdown selections
+- ✅ `usePageInfo` hook - Actively used in DashboardMain component
+
+**Still Missing:**
+- `src/types/hooks.ts` - Required for usePageInfo hook (needs to be created)
+
+**Safe to Delete:**
+- `FloatingToc` - Still unused
+- `ThemeProvider` - Still unused (LightThemeProvider is used instead)
+- `email-utils.ts` - Still unused
+- Empty directories: `constants/` and `api/migration/`
