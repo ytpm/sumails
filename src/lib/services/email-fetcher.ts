@@ -1,4 +1,4 @@
-import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
+import { fetchTodaysEmailsWithContent, fetchEmailsFromPeriod } from '@/lib/google/actions'
 import { getValidCredentials } from './mailboxes'
 import type { GmailMessageWithContent } from '@/types/email'
 import type { EmailDataWithContent } from '@/types/google'

@@ -6,10 +6,10 @@ import { fetchTodaysEmailsWithContent } from '@/lib/google/actions'
 // DELETE /api/mailboxes/[id] - Delete a connected account
 export async function DELETE(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const accountId = params.id
+		const { id: accountId } = await params
 		
 		if (!accountId) {
 			return NextResponse.json(
@@ -46,10 +46,10 @@ export async function DELETE(
 // POST /api/mailboxes/[id]/sync - Sync a connected account
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const accountId = params.id
+		const { id: accountId } = await params
 		
 		if (!accountId) {
 			return NextResponse.json(
