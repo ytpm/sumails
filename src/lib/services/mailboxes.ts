@@ -117,19 +117,57 @@ export async function getUserMailboxes(userId: string): Promise<MailboxWithStatu
 		throw new Error(`Failed to fetch connected mailboxes: ${error.message}`)
 	}
 
-	// Add status information to each mailbox
-	const mailboxesWithStatus: MailboxWithStatus[] = data.map((account: ConnectedAccountRow) => {
-		const now = new Date()
-		const expiresAt = new Date(account.expires_at)
-		const isExpired = now > expiresAt
+	// Add status information and real sync data to each mailbox
+	const mailboxesWithStatus: MailboxWithStatus[] = await Promise.all(
+		data.map(async (account: ConnectedAccountRow) => {
+			const now = new Date()
+			const expiresAt = new Date(account.expires_at)
+			const isExpired = now > expiresAt
 
-		return {
-			...account,
-			status: isExpired ? 'expired' : 'active',
-			lastSync: 'Never', // TODO: Implement last sync tracking
-			emailCount: 0 // TODO: Implement email count tracking
-		}
-	})
+			// Get the latest summary for this account to populate lastSync and emailCount
+			const { data: latestSummary } = await supabase
+				.from('email_summaries')
+				.select('created_at, email_count')
+				.eq('connected_account_id', account.id)
+				.order('created_at', { ascending: false })
+				.limit(1)
+				.maybeSingle()
+
+			// Calculate total email count from all summaries for this account
+			const { data: summaryStats } = await supabase
+				.from('email_summaries')
+				.select('email_count')
+				.eq('connected_account_id', account.id)
+
+			const totalEmailCount = summaryStats?.reduce((total, summary) => {
+				return total + (summary.email_count || 0)
+			}, 0) || 0
+
+			// Format last sync date
+			let lastSync = 'Never'
+			if (latestSummary?.created_at) {
+				const syncDate = new Date(latestSummary.created_at)
+				const today = new Date()
+				const yesterday = new Date(today)
+				yesterday.setDate(yesterday.getDate() - 1)
+				
+				if (syncDate.toDateString() === today.toDateString()) {
+					lastSync = 'Today'
+				} else if (syncDate.toDateString() === yesterday.toDateString()) {
+					lastSync = 'Yesterday'
+				} else {
+					lastSync = syncDate.toLocaleDateString()
+				}
+			}
+
+			return {
+				...account,
+				status: isExpired ? 'expired' : 'active',
+				lastSync,
+				emailCount: totalEmailCount
+			}
+		})
+	)
 
 	console.log(`📧 Found ${mailboxesWithStatus.length} connected mailboxes for user ${userId}`)
 	return mailboxesWithStatus

@@ -1,72 +1,158 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+	RefreshCw, 
+	AlertCircle, 
+	CheckCircle, 
+	Eye,
+	Calendar,
+	TrendingUp,
+	Mail,
+	Zap
+} from 'lucide-react'
+import { InboxStatus } from '@/types/email'
 
 interface DashboardOverviewProps {}
 
+interface SummaryStatus {
+	accountId: string
+	accountEmail: string
+	lastSummaryDate?: string
+	lastSummaryStatus?: InboxStatus
+	hasRecentSummary: boolean
+}
+
+interface DashboardStats {
+	totalAccounts: number
+	emailsToday: number
+	importantEmails: number
+	statusBreakdown: {
+		attentionNeeded: number
+		worthALook: number
+		allClear: number
+	}
+}
+
 export default function DashboardOverview({}: DashboardOverviewProps) {
-	// Mock data
-	const inboxPulse = {
-		emailsToday: 86,
-		importantEmails: 6,
+	const [summaryStatuses, setSummaryStatuses] = useState<SummaryStatus[]>([])
+	const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+		totalAccounts: 0,
+		emailsToday: 0,
+		importantEmails: 0,
 		statusBreakdown: {
-			attentionNeeded: 2,
-			worthALook: 1,
-			allClear: 3
+			attentionNeeded: 0,
+			worthALook: 0,
+			allClear: 0
+		}
+	})
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+
+	useEffect(() => {
+		loadDashboardData()
+	}, [])
+
+	const loadDashboardData = async () => {
+		try {
+			setIsLoading(true)
+			setError(null)
+
+			// Load summary statuses
+			const response = await fetch('/api/summaries')
+			
+			if (!response.ok) {
+				throw new Error('Failed to load dashboard data')
+			}
+
+			const data = await response.json()
+			const accounts = data.accounts || []
+			setSummaryStatuses(accounts)
+
+			// Calculate dashboard stats
+			const stats: DashboardStats = {
+				totalAccounts: accounts.length,
+				emailsToday: 0,
+				importantEmails: 0,
+				statusBreakdown: {
+					attentionNeeded: 0,
+					worthALook: 0,
+					allClear: 0
+				}
+			}
+
+			accounts.forEach((account: SummaryStatus) => {
+				if (account.hasRecentSummary) {
+					switch (account.lastSummaryStatus) {
+						case 'attention_needed':
+							stats.statusBreakdown.attentionNeeded++
+							break
+						case 'worth_a_look':
+							stats.statusBreakdown.worthALook++
+							break
+						case 'all_clear':
+							stats.statusBreakdown.allClear++
+							break
+					}
+				}
+			})
+
+			setDashboardStats(stats)
+
+		} catch (error) {
+			console.error('Error loading dashboard data:', error)
+			setError('Failed to load dashboard data')
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
-	const recentSummaries = [
-		{
-			date: 'Today',
-			status: 'Attention Needed',
-			emailCount: 86,
-			flaggedItems: 6
-		},
-		{
-			date: 'Yesterday',
-			status: 'All Clear',
-			emailCount: 72,
-			flaggedItems: 2
-		},
-		{
-			date: '2 days ago',
-			status: 'Worth a Look',
-			emailCount: 94,
-			flaggedItems: 4
-		}
-	]
-
-	const connectedAccounts = [
-		{
-			email: 'john.doe@gmail.com',
-			status: 'attention_needed',
-			lastSummary: '2 hours ago'
-		},
-		{
-			email: 'work@company.com',
-			status: 'all_clear',
-			lastSummary: '1 hour ago'
-		},
-		{
-			email: 'personal@outlook.com',
-			status: 'worth_a_look',
-			lastSummary: '3 hours ago'
-		}
-	]
-
 	const getStatusBadge = (status: string) => {
 		const statusConfig = {
-			'attention_needed': 'bg-red-100 text-red-800 border-red-200',
-			'Attention Needed': 'bg-red-100 text-red-800 border-red-200',
-			'worth_a_look': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-			'Worth a Look': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-			'all_clear': 'bg-green-100 text-green-800 border-green-200',
-			'All Clear': 'bg-green-100 text-green-800 border-green-200'
+			'attention_needed': { color: 'bg-red-100 text-red-800 border-red-200', icon: AlertCircle },
+			'Attention Needed': { color: 'bg-red-100 text-red-800 border-red-200', icon: AlertCircle },
+			'worth_a_look': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Eye },
+			'Worth a Look': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Eye },
+			'all_clear': { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
+			'All Clear': { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle }
 		}
 		
-		return statusConfig[status as keyof typeof statusConfig] || 'bg-gray-100 text-gray-800 border-gray-200'
+		return statusConfig[status as keyof typeof statusConfig] || { 
+			color: 'bg-gray-100 text-gray-800 border-gray-200', 
+			icon: Calendar 
+		}
+	}
+
+	const formatLastSummaryDate = (dateString?: string): string => {
+		if (!dateString) return 'Never'
+		
+		const date = new Date(dateString)
+		const today = new Date()
+		const yesterday = new Date(today)
+		yesterday.setDate(yesterday.getDate() - 1)
+		
+		if (date.toDateString() === today.toDateString()) {
+			return 'Today'
+		} else if (date.toDateString() === yesterday.toDateString()) {
+			return 'Yesterday'
+		} else {
+			return date.toLocaleDateString()
+		}
+	}
+
+	if (isLoading) {
+		return (
+			<div className="space-y-6 p-6">
+				<div className="flex items-center justify-center py-12">
+					<RefreshCw className="h-8 w-8 animate-spin" />
+				</div>
+			</div>
+		)
 	}
 
 	return (
@@ -79,6 +165,14 @@ export default function DashboardOverview({}: DashboardOverviewProps) {
 				</p>
 			</div>
 
+			{/* Error Alert */}
+			{error && (
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
+
 			{/* Inbox Pulse */}
 			<Card>
 				<CardHeader>
@@ -86,37 +180,37 @@ export default function DashboardOverview({}: DashboardOverviewProps) {
 						📬 Inbox Pulse
 					</CardTitle>
 					<CardDescription>
-						Quick glance at today's email activity
+						Quick glance at your connected accounts
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<div className="text-center p-4 bg-blue-50 rounded-lg border">
 							<div className="text-2xl font-bold text-blue-600">
-								{inboxPulse.emailsToday}
+								{dashboardStats.totalAccounts}
 							</div>
-							<div className="text-sm text-blue-700">emails received today</div>
+							<div className="text-sm text-blue-700">connected accounts</div>
 						</div>
 						<div className="text-center p-4 bg-orange-50 rounded-lg border">
 							<div className="text-2xl font-bold text-orange-600">
-								{inboxPulse.importantEmails}
+								{dashboardStats.statusBreakdown.attentionNeeded + dashboardStats.statusBreakdown.worthALook}
 							</div>
-							<div className="text-sm text-orange-700">important emails flagged</div>
+							<div className="text-sm text-orange-700">accounts need attention</div>
 						</div>
 						<div className="p-4 bg-gray-50 rounded-lg border">
 							<div className="text-sm font-medium mb-2">Status Breakdown:</div>
 							<div className="space-y-1 text-sm">
 								<div className="flex items-center gap-2">
 									<div className="w-3 h-3 bg-red-500 rounded-full"></div>
-									<span>{inboxPulse.statusBreakdown.attentionNeeded} Attention Needed</span>
+									<span>{dashboardStats.statusBreakdown.attentionNeeded} Attention Needed</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-									<span>{inboxPulse.statusBreakdown.worthALook} Worth a Look</span>
+									<span>{dashboardStats.statusBreakdown.worthALook} Worth a Look</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-									<span>{inboxPulse.statusBreakdown.allClear} All Clear</span>
+									<span>{dashboardStats.statusBreakdown.allClear} All Clear</span>
 								</div>
 							</div>
 						</div>
@@ -128,139 +222,158 @@ export default function DashboardOverview({}: DashboardOverviewProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						🗓️ Recent Summaries
+						🗓️ Account Summary Status
 					</CardTitle>
 					<CardDescription>
-						Past 3 days overview
+						Latest summary status for all connected accounts
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						{recentSummaries.map((summary, index) => (
-							<div
-								key={index}
-								className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer bg-white"
-							>
-								<div className="flex justify-between items-start mb-2">
-									<div className="font-medium">{summary.date}</div>
-									<span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadge(summary.status)}`}>
-										{summary.status}
-									</span>
-								</div>
-								<div className="text-sm text-muted-foreground space-y-1">
-									<div>{summary.emailCount} emails</div>
-									<div>{summary.flaggedItems} flagged items</div>
-								</div>
-							</div>
-						))}
-					</div>
+					{summaryStatuses.length === 0 ? (
+						<div className="text-center py-8">
+							<Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+							<h3 className="text-lg font-semibold mb-2">No connected accounts</h3>
+							<p className="text-muted-foreground mb-4">
+								Connect your first email account to start receiving summaries.
+							</p>
+							<Button onClick={() => window.location.href = '/account/mailboxes'}>
+								<Mail className="h-4 w-4 mr-2" />
+								Connect Account
+							</Button>
+						</div>
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{summaryStatuses.map((account, index) => {
+								const statusBadge = account.lastSummaryStatus 
+									? getStatusBadge(account.lastSummaryStatus)
+									: getStatusBadge('never')
+
+								return (
+									<div
+										key={index}
+										className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer bg-white"
+									>
+										<div className="flex justify-between items-start mb-2">
+											<div className="font-medium truncate">{account.accountEmail}</div>
+											{account.lastSummaryStatus && (
+												<Badge 
+													variant="outline" 
+													className={statusBadge.color}
+												>
+													<statusBadge.icon className="h-3 w-3 mr-1" />
+													{account.lastSummaryStatus.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+												</Badge>
+											)}
+										</div>
+										<div className="text-sm text-muted-foreground space-y-1">
+											<div className="flex items-center gap-2">
+												<Calendar className="h-3 w-3" />
+												Last Summary: {formatLastSummaryDate(account.lastSummaryDate)}
+											</div>
+											<div>
+												Recent: {account.hasRecentSummary ? 'Yes' : 'No'}
+											</div>
+										</div>
+									</div>
+								)
+							})}
+						</div>
+					)}
 				</CardContent>
 			</Card>
 
-			{/* Inbox Trends and AI Suggestions Row */}
+			{/* Quick Actions and AI Suggestions Row */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Inbox Trends */}
+				{/* Quick Actions */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							📊 Inbox Trends
+							⚡ Quick Actions
 						</CardTitle>
 						<CardDescription>
-							Weekly patterns and insights
+							Manage your email summaries
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="p-3 bg-blue-50 rounded-lg border">
-							<div className="font-medium text-blue-900">📈 320 emails this week</div>
-							<div className="text-sm text-blue-700">+12% from last week</div>
-						</div>
-						<div className="p-3 bg-purple-50 rounded-lg border">
-							<div className="font-medium text-purple-900">Top Senders</div>
-							<div className="text-sm text-purple-700">Google, Railway, GoDaddy</div>
-						</div>
-						<div className="p-3 bg-green-50 rounded-lg border">
-							<div className="font-medium text-green-900">Peak Activity</div>
-							<div className="text-sm text-green-700">Mornings 8–10am</div>
+						<Button 
+							className="w-full" 
+							onClick={() => window.location.href = '/account/mailboxes'}
+						>
+							<Mail className="h-4 w-4 mr-2" />
+							Manage Mailboxes
+						</Button>
+						<Button 
+							variant="outline" 
+							className="w-full"
+							onClick={loadDashboardData}
+						>
+							<RefreshCw className="h-4 w-4 mr-2" />
+							Refresh Dashboard
+						</Button>
+						<Separator />
+						<div className="text-sm text-muted-foreground">
+							<p>• Summaries are generated automatically daily</p>
+							<p>• Connect more accounts to get comprehensive insights</p>
+							<p>• Check mailboxes page for manual summary generation</p>
 						</div>
 					</CardContent>
 				</Card>
 
-				{/* AI Suggestions */}
+				{/* System Status */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							💡 AI Suggestions
+							📊 System Status
 						</CardTitle>
 						<CardDescription>
-							Smart recommendations for your inbox
+							Summary system health and activity
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-							<div className="font-medium text-amber-900 mb-2">
-								Promotional Email Overload
-							</div>
-							<div className="text-sm text-amber-800 mb-3">
-								You've received 84 promotional emails this week.
-							</div>
-							<div className="text-sm text-amber-800 mb-4">
-								Consider unsubscribing from: bolt.new, Fiverr, Wix.
-							</div>
-							<Button variant="outline" size="sm" className="w-full">
-								Create Filters
-							</Button>
+						<div className="p-3 bg-green-50 rounded-lg border">
+							<div className="font-medium text-green-900">✅ System Operational</div>
+							<div className="text-sm text-green-700">All services running normally</div>
+						</div>
+						<div className="p-3 bg-blue-50 rounded-lg border">
+							<div className="font-medium text-blue-900">🤖 AI Processing</div>
+							<div className="text-sm text-blue-700">OpenAI GPT-4o integration active</div>
+						</div>
+						<div className="p-3 bg-purple-50 rounded-lg border">
+							<div className="font-medium text-purple-900">📱 Notifications</div>
+							<div className="text-sm text-purple-700">Console logging enabled (Phase 3)</div>
 						</div>
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Connected Account Overview */}
+			{/* Help Section */}
 			<Card>
 				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						📂 Connected Account Overview
-					</CardTitle>
+					<CardTitle>📬 Summary System</CardTitle>
 					<CardDescription>
-						Manage your connected email accounts
+						How the Sumails summary system works
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="overflow-x-auto">
-						<table className="w-full">
-							<thead>
-								<tr className="border-b">
-									<th className="text-left py-2 px-4 font-medium">Email Address</th>
-									<th className="text-left py-2 px-4 font-medium">Status</th>
-									<th className="text-left py-2 px-4 font-medium">Last Summary</th>
-									<th className="text-left py-2 px-4 font-medium">Actions</th>
-								</tr>
-							</thead>
-							<tbody>
-								{connectedAccounts.map((account, index) => (
-									<tr key={index} className="border-b hover:bg-gray-50">
-										<td className="py-3 px-4 font-medium">{account.email}</td>
-										<td className="py-3 px-4">
-											<span className={`px-2 py-1 text-xs rounded-full border ${getStatusBadge(account.status)}`}>
-												{account.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-											</span>
-										</td>
-										<td className="py-3 px-4 text-sm text-muted-foreground">
-											{account.lastSummary}
-										</td>
-										<td className="py-3 px-4">
-											<div className="flex gap-2">
-												<Button variant="outline" size="sm">
-													Sync
-												</Button>
-												<Button variant="ghost" size="sm">
-													View
-												</Button>
-											</div>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+						<div className="p-3 bg-blue-50 rounded-lg border">
+							<div className="font-medium text-blue-900 mb-2">🔌 Automatic Summaries</div>
+							<div className="text-blue-700">
+								Summaries are generated automatically when you connect a mailbox and daily via CRON jobs.
+							</div>
+						</div>
+						<div className="p-3 bg-green-50 rounded-lg border">
+							<div className="font-medium text-green-900 mb-2">🤖 AI-Powered</div>
+							<div className="text-green-700">
+								Our AI analyzes your emails and provides intelligent insights and highlights.
+							</div>
+						</div>
+						<div className="p-3 bg-purple-50 rounded-lg border">
+							<div className="font-medium text-purple-900 mb-2">📱 Smart Notifications</div>
+							<div className="text-purple-700">
+								Get notified only when there's something important in your inbox.
+							</div>
+						</div>
 					</div>
 				</CardContent>
 			</Card>

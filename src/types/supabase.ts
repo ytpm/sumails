@@ -76,40 +76,46 @@ export type Database = {
         Row: {
           connected_account_id: string | null
           created_at: string | null
+          date_processed: string | null
           date_range_end: string | null
           date_range_start: string | null
           delivery_status: string | null
           email_count: number | null
           id: string
+          inbox_status: string | null
           sent_at: string | null
           sent_via: string | null
-          summary_text: string
+          summary_data: Json | null
           user_id: string
         }
         Insert: {
           connected_account_id?: string | null
           created_at?: string | null
+          date_processed?: string | null
           date_range_end?: string | null
           date_range_start?: string | null
           delivery_status?: string | null
           email_count?: number | null
           id?: string
+          inbox_status?: string | null
           sent_at?: string | null
           sent_via?: string | null
-          summary_text: string
+          summary_data?: Json | null
           user_id: string
         }
         Update: {
           connected_account_id?: string | null
           created_at?: string | null
+          date_processed?: string | null
           date_range_end?: string | null
           date_range_start?: string | null
           delivery_status?: string | null
           email_count?: number | null
           id?: string
+          inbox_status?: string | null
           sent_at?: string | null
           sent_via?: string | null
-          summary_text?: string
+          summary_data?: Json | null
           user_id?: string
         }
         Relationships: [

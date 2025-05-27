@@ -7,11 +7,24 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
-import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
+import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle, Clock, Zap, Eye, Calendar } from 'lucide-react'
 import type { MailboxWithStatus } from '@/lib/services/mailboxes'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { InboxStatus } from '@/types/email'
+import MailboxesLoadingSkeleton from './mailboxes/MailboxesLoadingSkeleton'
 
 interface MailboxesClientProps {
 	initialAccounts: MailboxWithStatus[]
+}
+
+interface SummaryStatus {
+	accountId: string
+	accountEmail: string
+	lastSummaryDate?: string
+	lastSummaryStatus?: InboxStatus
+	hasRecentSummary: boolean
 }
 
 export default function MailboxesClient({ initialAccounts }: MailboxesClientProps) {
@@ -19,10 +32,15 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 	const searchParams = useSearchParams()
 	const { isLoading, isAuthenticated } = useAuth()
 	const [accounts, setAccounts] = useState<MailboxWithStatus[]>(initialAccounts)
+	const [summaryStatuses, setSummaryStatuses] = useState<SummaryStatus[]>([])
 	const [isConnecting, setIsConnecting] = useState(false)
 	const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
 	const [syncingId, setSyncingId] = useState<string | null>(null)
 	const [isRefreshingTokens, setIsRefreshingTokens] = useState(false)
+	const [isLoadingSummaries, setIsLoadingSummaries] = useState(true)
+	const [generatingForAccount, setGeneratingForAccount] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
+	const [success, setSuccess] = useState<string | null>(null)
 
 	// Function to refresh accounts from server
 	const refreshAccounts = async () => {
@@ -113,31 +131,63 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		}
 	}, [isLoading, isAuthenticated, router])
 
-	const handleConnectAccount = async () => {
-		try {
-			setIsConnecting(true)
-			
-			// Call API to get OAuth URL
-			const response = await fetch('/api/mailboxes', {
-				method: 'POST',
-			})
+	// Load summary statuses on component mount
+	useEffect(() => {
+		loadSummaryStatuses()
+	}, [])
 
+	const loadSummaryStatuses = async () => {
+		try {
+			setIsLoadingSummaries(true)
+			const response = await fetch('/api/summaries')
+			
 			if (!response.ok) {
-				throw new Error('Failed to initiate OAuth flow')
+				throw new Error('Failed to load summary statuses')
 			}
 
-			const { authUrl } = await response.json()
+			const data = await response.json()
+			setSummaryStatuses(data.accounts || [])
+		} catch (error) {
+			console.error('Error loading summary statuses:', error)
+			setError('Failed to load summary statuses')
+		} finally {
+			setIsLoadingSummaries(false)
+		}
+	}
+
+	const handleConnectAccount = async () => {
+		setIsConnecting(true)
+		setError(null)
+		
+		try {
+						// Call API to get OAuth URL
+						const response = await fetch('/api/mailboxes', {
+							method: 'POST',
+						})
 			
-			// Redirect to Google OAuth
+						if (!response.ok) {
+							throw new Error('Failed to initiate OAuth flow')
+						}
+			
+						const { authUrl } = await response.json()
+			// // Redirect to Google OAuth
+			// const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+			// const redirectUri = process.env.NODE_ENV === 'production' 
+			// 	? `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`
+			// 	: 'http://localhost:3000/api/auth/callback'
+			
+			// const scope = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email'
+			// const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`
+			
 			window.location.href = authUrl
 		} catch (error) {
-			console.error('Connect account error:', error)
-			toast.error('Failed to connect mailbox. Please try again.')
+			console.error('Error connecting account:', error)
+			setError('Failed to connect account')
 			setIsConnecting(false)
 		}
 	}
 
-	const handleDisconnectAccount = async (accountId: string, email: string) => {
+	const handleDisconnectAccount = async (accountId: string) => {
 		try {
 			setDisconnectingId(accountId)
 			
@@ -150,7 +200,7 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 			}
 			
 			setAccounts(prev => prev.filter(account => account.id !== accountId))
-			toast.success(`${email} disconnected successfully`)
+			toast.success(`${accounts.find(a => a.id === accountId)?.email} disconnected successfully`)
 		} catch (error) {
 			console.error('Disconnect error:', error)
 			toast.error('Failed to disconnect mailbox. Please try again.')
@@ -188,41 +238,85 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		}
 	}
 
-	const getStatusIcon = (status: MailboxWithStatus['status']) => {
-		switch (status) {
-			case 'active':
-				return <CheckCircle className="h-4 w-4 text-green-500" />
-			case 'error':
-				return <AlertCircle className="h-4 w-4 text-red-500" />
-			case 'expired':
-				return <AlertCircle className="h-4 w-4 text-yellow-500" />
-			default:
-				return null
+	const handleGenerateSummary = async (accountId: string) => {
+		setGeneratingForAccount(accountId)
+		setError(null)
+		setSuccess(null)
+
+		try {
+			const response = await fetch(`/api/summaries/${accountId}`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					dateRange: 'today',
+					forceRegenerate: false
+				})
+			})
+
+			const data = await response.json()
+
+			if (!response.ok) {
+				throw new Error(data.error || 'Failed to generate summary')
+			}
+
+			if (data.alreadyExists) {
+				setSuccess('Summary already exists for today')
+			} else {
+				setSuccess(`Summary generated successfully! Status: ${data.inboxStatus}`)
+			}
+
+			// Reload summary statuses to show updated data
+			await loadSummaryStatuses()
+
+		} catch (error) {
+			console.error('Error generating summary:', error)
+			setError(error instanceof Error ? error.message : 'Failed to generate summary')
+		} finally {
+			setGeneratingForAccount(null)
 		}
 	}
 
-	const getStatusText = (status: MailboxWithStatus['status']) => {
-		switch (status) {
-			case 'active':
-				return 'Active'
-			case 'error':
-				return 'Error'
-			case 'expired':
-				return 'Expired'
-			default:
-				return 'Unknown'
+	const getStatusBadge = (status: string) => {
+		const statusConfig = {
+			'active': { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
+			'expired': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: AlertCircle },
+			'error': { color: 'bg-red-100 text-red-800 border-red-200', icon: AlertCircle },
+			'attention_needed': { color: 'bg-red-100 text-red-800 border-red-200', icon: AlertCircle },
+			'worth_a_look': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Eye },
+			'all_clear': { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle }
+		}
+		
+		return statusConfig[status as keyof typeof statusConfig] || { 
+			color: 'bg-gray-100 text-gray-800 border-gray-200', 
+			icon: Clock 
+		}
+	}
+
+	const getSummaryStatusForAccount = (accountId: string): SummaryStatus | undefined => {
+		return summaryStatuses.find(status => status.accountId === accountId)
+	}
+
+	const formatLastSummaryDate = (dateString?: string): string => {
+		if (!dateString) return 'Never'
+		
+		const date = new Date(dateString)
+		const today = new Date()
+		const yesterday = new Date(today)
+		yesterday.setDate(yesterday.getDate() - 1)
+		
+		if (date.toDateString() === today.toDateString()) {
+			return 'Today'
+		} else if (date.toDateString() === yesterday.toDateString()) {
+			return 'Yesterday'
+		} else {
+			return date.toLocaleDateString()
 		}
 	}
 
 	if (isLoading) {
-		return (
-			<div className="min-h-screen bg-background flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-					<p className="text-muted-foreground">Loading...</p>
-				</div>
-			</div>
-		)
+		return <MailboxesLoadingSkeleton />
 	}
 
 	if (!isAuthenticated) {
@@ -285,6 +379,33 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 					</div>
 				</div>
 
+				{/* Alerts */}
+				{error && (
+					<Alert variant="destructive">
+						<AlertCircle className="h-4 w-4" />
+						<AlertDescription>{error}</AlertDescription>
+					</Alert>
+				)}
+
+				{success && (
+					<Alert>
+						<CheckCircle className="h-4 w-4" />
+						<AlertDescription>{success}</AlertDescription>
+					</Alert>
+				)}
+
+				{/* Loading State */}
+				{isLoadingSummaries && (
+					<Card>
+						<CardContent className="flex items-center justify-center py-8">
+							<div className="flex items-center gap-2">
+								<RefreshCw className="h-4 w-4 animate-spin" />
+								<span>Loading summary statuses...</span>
+							</div>
+						</CardContent>
+					</Card>
+				)}
+
 				{/* Connected Accounts List */}
 				<div className="space-y-4">
 					{accounts.length === 0 ? (
@@ -306,94 +427,147 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 							</CardContent>
 						</Card>
 					) : (
-						accounts.map((account) => (
-							<Card key={account.id}>
-								<CardHeader>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-												<Mail className="h-5 w-5 text-primary" />
+						accounts.map((account) => {
+							const summaryStatus = getSummaryStatusForAccount(account.id)
+							const accountStatusBadge = getStatusBadge(account.status)
+							const summaryStatusBadge = summaryStatus?.lastSummaryStatus 
+								? getStatusBadge(summaryStatus.lastSummaryStatus)
+								: null
+
+							return (
+								<Card key={account.id}>
+									<CardHeader>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-3">
+												<div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+													<Mail className="h-5 w-5 text-primary" />
+												</div>
+												<div>
+													<CardTitle className="text-lg">{account.email}</CardTitle>
+													<div className="text-sm text-muted-foreground flex items-center gap-2">
+														<Badge 
+															variant="outline" 
+															className={accountStatusBadge.color}
+														>
+															<accountStatusBadge.icon className="h-3 w-3 mr-1" />
+															{account.status.charAt(0).toUpperCase() + account.status.slice(1)}
+														</Badge>
+														{summaryStatusBadge && (
+															<Badge 
+																variant="outline" 
+																className={summaryStatusBadge.color}
+															>
+																<summaryStatusBadge.icon className="h-3 w-3 mr-1" />
+																{summaryStatus?.lastSummaryStatus?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+															</Badge>
+														)}
+													</div>
+												</div>
 											</div>
-											<div>
-												<CardTitle className="text-lg">{account.email}</CardTitle>
-												<CardDescription className="flex items-center gap-2">
-													{getStatusIcon(account.status)}
-													{getStatusText(account.status)} • {account.provider}
-												</CardDescription>
+											<div className="flex items-center gap-2">
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleSyncAccount(account.id, account.email)}
+													disabled={disconnectingId === account.id || syncingId === account.id}
+												>
+													{syncingId === account.id ? (
+														<RefreshCw className="h-4 w-4 animate-spin mr-2" />
+													) : (
+														<RefreshCw className="h-4 w-4 mr-2" />
+													)}
+													Sync
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleDisconnectAccount(account.id)}
+													disabled={disconnectingId === account.id || syncingId === account.id}
+													className="text-destructive hover:text-destructive"
+												>
+													{disconnectingId === account.id ? (
+														<RefreshCw className="h-4 w-4 animate-spin" />
+													) : (
+														<Trash2 className="h-4 w-4" />
+													)}
+												</Button>
 											</div>
 										</div>
-										<div className="flex items-center gap-2">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => handleSyncAccount(account.id, account.email)}
-												disabled={disconnectingId === account.id || syncingId === account.id}
-											>
-												{syncingId === account.id ? (
-													<RefreshCw className="h-4 w-4 animate-spin mr-2" />
-												) : (
-													<RefreshCw className="h-4 w-4 mr-2" />
-												)}
-												Sync
-											</Button>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => handleDisconnectAccount(account.id, account.email)}
-												disabled={disconnectingId === account.id || syncingId === account.id}
-												className="text-destructive hover:text-destructive"
-											>
-												{disconnectingId === account.id ? (
-													<RefreshCw className="h-4 w-4 animate-spin" />
-												) : (
-													<Trash2 className="h-4 w-4" />
-												)}
-											</Button>
+									</CardHeader>
+									<CardContent>
+										<div className="flex items-center justify-between text-sm">
+											<div className="flex items-center gap-1 text-muted-foreground">
+												<Calendar className="h-3 w-3" />
+												<span>Last sync:</span>
+												<span className="font-medium text-foreground">{account.lastSync || 'Never'}</span>
+											</div>
+											<div className="flex items-center gap-1 text-muted-foreground">
+												<Mail className="h-3 w-3" />
+												<span>Emails:</span>
+												<span className="font-medium text-foreground">{account.emailCount || 0}</span>
+											</div>
 										</div>
-									</div>
-								</CardHeader>
-								<CardContent>
-									<div className="grid grid-cols-2 gap-4 text-sm">
-										<div>
-											<p className="text-muted-foreground">Last Sync</p>
-											<p className="font-medium">{account.lastSync || 'Never'}</p>
-										</div>
-										<div>
-											<p className="text-muted-foreground">Emails Processed</p>
-											<p className="font-medium">{account.emailCount || 0}</p>
-										</div>
-									</div>
-									{account.status === 'expired' && (
-										<div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-											<p className="text-sm text-yellow-800">
-												This mailbox's authorization has expired. Please reconnect to continue receiving summaries.
-											</p>
-										</div>
-									)}
-									{account.status === 'error' && (
-										<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-											<p className="text-sm text-red-800">
-												There was an error accessing this mailbox. Please try syncing or reconnecting.
-											</p>
-										</div>
-									)}
-								</CardContent>
-							</Card>
-						))
+										{account.status === 'expired' && (
+											<div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+												<p className="text-sm text-yellow-800">
+													This mailbox's authorization has expired. Please reconnect to continue receiving summaries.
+												</p>
+											</div>
+										)}
+										{account.status === 'error' && (
+											<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+												<p className="text-sm text-red-800">
+													There was an error accessing this mailbox. Please try syncing or reconnecting.
+												</p>
+											</div>
+										)}
+									</CardContent>
+								</Card>
+							)
+						})
 					)}
 				</div>
 
 				{/* Help Section */}
 				<Card>
 					<CardHeader>
-						<CardTitle>Need Help?</CardTitle>
+						<CardTitle>📬 Summary System</CardTitle>
+						<CardDescription>
+							How the Sumails summary system works
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-2 text-sm text-muted-foreground">
-							<p>• Connected mailboxes allow Sumails to access and summarize your emails</p>
-							<p>• We only read email metadata and content for summarization purposes</p>
-							<p>• You can disconnect mailboxes at any time</p>
-							<p>• Sync manually to get the latest email summaries</p>
+						<div className="space-y-4">
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+								<div className="p-3 bg-blue-50 rounded-lg border">
+									<div className="font-medium text-blue-900 mb-2">🔌 Automatic Summaries</div>
+									<div className="text-blue-700">
+										Summaries are generated automatically when you connect a mailbox and daily via CRON jobs.
+									</div>
+								</div>
+								<div className="p-3 bg-green-50 rounded-lg border">
+									<div className="font-medium text-green-900 mb-2">🤖 AI-Powered</div>
+									<div className="text-green-700">
+										Our AI analyzes your emails and provides intelligent insights and highlights.
+									</div>
+								</div>
+								<div className="p-3 bg-purple-50 rounded-lg border">
+									<div className="font-medium text-purple-900 mb-2">📱 Smart Notifications</div>
+									<div className="text-purple-700">
+										Get notified only when there's something important in your inbox.
+									</div>
+								</div>
+							</div>
+							
+							<Separator />
+							
+							<div className="space-y-2 text-sm text-muted-foreground">
+								<p>• <strong>Attention Needed:</strong> Contains urgent or important emails requiring action</p>
+								<p>• <strong>Worth a Look:</strong> Moderate relevance, some things to review</p>
+								<p>• <strong>All Clear:</strong> Nothing critical today, you're caught up!</p>
+								<p>• Summaries are generated once per day to avoid duplicates</p>
+								<p>• Use "Generate Summary" to create today's summary or "Regenerate" to force a new one</p>
+							</div>
 						</div>
 					</CardContent>
 				</Card>

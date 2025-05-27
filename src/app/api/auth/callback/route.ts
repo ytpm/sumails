@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { createClient } from '@/utils/supabase/server'
 import { saveConnectedAccount, getUserInfo } from '@/lib/services/mailboxes'
+import { triggerInitialSummary } from '@/lib/services/summary-orchestrator'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -54,7 +55,30 @@ export async function GET(request: NextRequest) {
 		const userInfo = await getUserInfo(tokens.access_token)
 
 		// Save connected account to Supabase
-		await saveConnectedAccount(user.id, tokens, userInfo)
+		const connectedAccount = await saveConnectedAccount(user.id, tokens, userInfo)
+
+		// 🔌 TRIGGER INITIAL SUMMARY (as per SUMMARY_SYSTEM.md)
+		// Generate summary immediately after mailbox connection
+		console.log(`🔌 Triggering initial summary for newly connected account: ${userInfo.email}`)
+		
+		try {
+			const summaryResult = await triggerInitialSummary(user.id, connectedAccount.id)
+			
+			if (summaryResult.success) {
+				console.log(`✅ Initial summary generated successfully for ${userInfo.email}`)
+				console.log(`📊 Summary ID: ${summaryResult.summaryId}, Status: ${summaryResult.inboxStatus}`)
+				
+				// TODO: Send notification based on inbox status
+				// if (summaryResult.inboxStatus === 'attention_needed' || summaryResult.inboxStatus === 'worth_a_look') {
+				//     await sendSummaryNotification(user.id, summaryResult)
+				// }
+			} else {
+				console.error(`❌ Failed to generate initial summary for ${userInfo.email}:`, summaryResult.message)
+			}
+		} catch (summaryError) {
+			// Don't fail the entire connection process if summary fails
+			console.error(`❌ Error generating initial summary for ${userInfo.email}:`, summaryError)
+		}
 
 		// Redirect to connected accounts page with success message
 		return NextResponse.redirect(
