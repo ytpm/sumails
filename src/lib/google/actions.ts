@@ -58,25 +58,6 @@ class GmailService {
 	}
 
 	/**
-	 * Set credentials from OAuth callback
-	 */
-	async setCredentials(code: string) {
-		const oauth2Client = new google.auth.OAuth2(
-			process.env.GOOGLE_CLIENT_ID,
-			process.env.GOOGLE_CLIENT_SECRET,
-			process.env.NODE_ENV === 'production' 
-				? 'https://your-domain.com/api/auth/callback' 
-				: 'http://localhost:3000/api/auth/callback'
-		)
-
-		const { tokens } = await oauth2Client.getToken(code)
-		oauth2Client.setCredentials(tokens)
-		
-		// Store tokens securely (you might want to use a database or session storage)
-		return tokens
-	}
-
-	/**
 	 * 🚀 Efficient Strategy: Fetch today's emails with full content
 	 * Uses parallel Promise.all() approach for better performance
 	 * Fetches ALL emails from today for comprehensive analysis with pagination
@@ -201,7 +182,7 @@ class GmailService {
 	}
 
 	/**
-	 * 🧠 Enhanced parser: Extract text content from Gmail message payload
+	 * Parse Gmail message data into our EmailDataWithContent format
 	 */
 	private parseEmailDataWithContent(message: gmail_v1.Schema$Message): EmailDataWithContent | null {
 		try {
@@ -216,7 +197,6 @@ class GmailService {
 				return header?.value || ''
 			}
 
-			// Extract content from payload parts
 			const { textContent, htmlContent, bodyPreview } = this.extractEmailContent(message.payload)
 
 			return {
@@ -240,8 +220,7 @@ class GmailService {
 	}
 
 	/**
-	 * 🧱 Extract text/HTML content and create preview
-	 * Finds text/plain, falls back to text/html, decodes Base64
+	 * Extract text and HTML content from Gmail message payload
 	 */
 	private extractEmailContent(payload: gmail_v1.Schema$MessagePart | undefined): {
 		textContent?: string
@@ -250,95 +229,41 @@ class GmailService {
 	} {
 		let textContent: string | undefined
 		let htmlContent: string | undefined
+		let bodyPreview = ''
 
 		if (!payload) {
-			return { textContent, htmlContent, bodyPreview: 'No content available' }
+			return { bodyPreview }
 		}
 
 		// Recursive function to traverse message parts
 		const traverseParts = (part: gmail_v1.Schema$MessagePart) => {
-			const mimeType = part.mimeType || ''
-
-			// Extract text/plain content (preferred)
-			if (mimeType === 'text/plain' && part.body?.data) {
-				try {
-					textContent = Buffer.from(part.body.data, 'base64url').toString('utf-8')
-				} catch (error) {
-					console.warn('Failed to decode text/plain content:', error)
-				}
-			}
-			
-			// Extract HTML content (fallback)
-			if (mimeType === 'text/html' && part.body?.data) {
-				try {
-					htmlContent = Buffer.from(part.body.data, 'base64url').toString('utf-8')
-				} catch (error) {
-					console.warn('Failed to decode text/html content:', error)
+			if (part.mimeType === 'text/plain' && part.body?.data) {
+				textContent = Buffer.from(part.body.data, 'base64').toString('utf-8')
+				bodyPreview = textContent.substring(0, 200) + (textContent.length > 200 ? '...' : '')
+			} else if (part.mimeType === 'text/html' && part.body?.data) {
+				htmlContent = Buffer.from(part.body.data, 'base64').toString('utf-8')
+				// If no text content, extract preview from HTML (basic)
+				if (!bodyPreview && htmlContent) {
+					// Simple HTML tag removal for preview
+					const textFromHtml = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+					bodyPreview = textFromHtml.substring(0, 200) + (textFromHtml.length > 200 ? '...' : '')
 				}
 			}
 
-			// Recursively process nested parts (for multipart messages)
+			// Recursively check parts
 			if (part.parts) {
 				part.parts.forEach(traverseParts)
 			}
 		}
 
-		// Start traversal
-		traverseParts(payload)
-
-		// Create best available preview
-		let bodyPreview = 'No content available'
-		if (textContent) {
-			// Use plain text (preferred)
-			bodyPreview = textContent.substring(0, 500) + (textContent.length > 500 ? '...' : '')
-		} else if (htmlContent) {
-			// Strip HTML tags for preview
-			const strippedHtml = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-			bodyPreview = strippedHtml.substring(0, 500) + (strippedHtml.length > 500 ? '...' : '')
+		// Handle single part or multipart messages
+		if (payload.parts) {
+			payload.parts.forEach(traverseParts)
+		} else {
+			traverseParts(payload)
 		}
 
 		return { textContent, htmlContent, bodyPreview }
-	}
-
-	/**
-	 * 📊 Enhanced console logging with full content
-	 * Fetches ALL today's emails for comprehensive analysis
-	 */
-	async listTodaysEmailsWithContentToConsole(
-		accessToken: string, 
-		maxResults?: number // Optional limit for testing
-	): Promise<void> {
-		try {
-			console.log('🚀 Fetching ALL today\'s emails with full content...')
-			const emails = await this.fetchTodaysEmailsWithContent(accessToken, maxResults)
-			
-			console.log(`\n📧 Found ${emails.length} emails from today:\n`)
-			
-			emails.forEach((email, index) => {
-				console.log(`--- Email ${index + 1} ---`)
-				console.log(`📎 ID: ${email.id}`)
-				console.log(`📝 Subject: ${email.subject}`)
-				console.log(`👤 From: ${email.from}`)
-				console.log(`📅 Date: ${email.date}`)
-				console.log(`🏷️  Labels: ${email.labels.join(', ')}`)
-				console.log(`📄 Snippet: ${email.snippet}`)
-				console.log(`📃 Content Preview: ${email.bodyPreview}`)
-				
-				if (email.textContent) {
-					console.log(`📝 Has Text Content: ${email.textContent.length} characters`)
-				}
-				if (email.htmlContent) {
-					console.log(`🌐 Has HTML Content: ${email.htmlContent.length} characters`)
-				}
-				
-				console.log('-------------------\n')
-			})
-
-			console.log(`✅ Successfully listed ${emails.length} emails with content to console`)
-		} catch (error) {
-			console.error('❌ Error listing emails with content:', error)
-			throw error
-		}
 	}
 
 	/**
@@ -424,182 +349,14 @@ class GmailService {
 			return null
 		}
 	}
-
-	/**
-	 * List emails to console (for testing purposes)
-	 */
-	async listEmailsToConsole(
-		accessToken: string, 
-		maxResults: number = 10,
-		query: string = ''
-	): Promise<void> {
-		try {
-			console.log('🔍 Fetching emails from Gmail...')
-			const emails = await this.fetchEmails(accessToken, maxResults, query)
-			
-			console.log(`\n📧 Found ${emails.length} emails:\n`)
-			
-			emails.forEach((email, index) => {
-				console.log(`--- Email ${index + 1} ---`)
-				console.log(`📎 ID: ${email.id}`)
-				console.log(`📝 Subject: ${email.subject}`)
-				console.log(`👤 From: ${email.from}`)
-				console.log(`📅 Date: ${email.date}`)
-				console.log(`🏷️  Labels: ${email.labels.join(', ')}`)
-				console.log(`📄 Snippet: ${email.snippet}`)
-				console.log('-------------------\n')
-			})
-
-			console.log(`✅ Successfully listed ${emails.length} emails to console`)
-		} catch (error) {
-			console.error('❌ Error listing emails:', error)
-			throw error
-		}
-	}
-
-	/**
-	 * 🚀 Fetch emails from a specific period (for initial account setup)
-	 * Uses the same efficient strategy as fetchTodaysEmailsWithContent but with configurable period
-	 */
-	async fetchEmailsFromPeriod(
-		accessToken: string, 
-		days: number = 7, // Default to 7 days for initial fetch
-		maxResults?: number
-	): Promise<EmailDataWithContent[]> {
-		try {
-			console.log(`🔍 Fetching emails from last ${days} days with full content...`)
-			
-			// Create OAuth2 client with access token
-			const oauth2Client = new google.auth.OAuth2(
-				process.env.GOOGLE_CLIENT_ID,
-				process.env.GOOGLE_CLIENT_SECRET
-			)
-			
-			oauth2Client.setCredentials({ access_token: accessToken })
-			const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
-
-			// Step 1: Fetch ALL messages with pagination
-			const allMessages: any[] = []
-			let pageToken: string | undefined
-			let requestCount = 0
-			const maxRequestsPerPage = 100 // Gmail's maximum per request
-
-			do {
-				requestCount++
-				console.log(`📄 Fetching page ${requestCount} of last ${days} days emails...`)
-				
-				const messageList = await gmail.users.messages.list({
-					userId: 'me',
-					maxResults: maxRequestsPerPage,
-					q: `newer_than:${days}d`, // Configurable period
-					pageToken,
-				})
-
-				const messages = messageList.data.messages || []
-				allMessages.push(...messages)
-				pageToken = messageList.data.nextPageToken || undefined
-
-				console.log(`📧 Page ${requestCount}: Found ${messages.length} messages (Total so far: ${allMessages.length})`)
-
-				// Safety check - if user specified maxResults, respect it
-				if (maxResults && allMessages.length >= maxResults) {
-					console.log(`⚠️ Reached specified limit of ${maxResults} emails`)
-					break
-				}
-
-				// Safety check - prevent infinite loops (max 20 pages for initial fetch)
-				if (requestCount >= 20) {
-					console.log(`⚠️ Reached maximum page limit (20 pages). Total emails: ${allMessages.length}`)
-					break
-				}
-
-			} while (pageToken)
-
-			console.log(`📧 Total messages found from last ${days} days: ${allMessages.length}`)
-
-			if (allMessages.length === 0) {
-				return []
-			}
-
-			// Limit to maxResults if specified
-			const messagesToProcess = maxResults 
-				? allMessages.slice(0, maxResults)
-				: allMessages
-
-			console.log(`📧 Processing ${messagesToProcess.length} messages`)
-
-			// Step 2: Parallel fetch all message details with rate limiting
-			console.log('⚡ Fetching full content in parallel...')
-			
-			// Add small delay between requests to avoid rate limiting
-			const fetchWithDelay = async (messageId: string, index: number) => {
-				// Small staggered delay to avoid hitting rate limits
-				if (index > 0) {
-					await new Promise(resolve => setTimeout(resolve, 30 * (index % 10))) // Stagger every 10 requests
-				}
-				
-				return gmail.users.messages.get({
-					userId: 'me',
-					id: messageId,
-					format: 'full', // Get full message content
-				})
-			}
-
-			// Step 3: Execute all requests in parallel (in batches)
-			const batchSize = 20 // Process in smaller batches to avoid rate limits
-			const emailsWithContent: EmailDataWithContent[] = []
-
-			for (let i = 0; i < messagesToProcess.length; i += batchSize) {
-				const batch = messagesToProcess.slice(i, i + batchSize)
-				console.log(`⚡ Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(messagesToProcess.length / batchSize)} (${batch.length} emails)`)
-
-				const batchPromises = batch.map((msg, index) => 
-					msg.id ? fetchWithDelay(msg.id, index) : null
-				).filter(Boolean)
-
-				const batchResults = await Promise.all(batchPromises)
-				
-				// Parse batch results
-				for (const messageResponse of batchResults) {
-					if (messageResponse?.data) {
-						const emailData = this.parseEmailDataWithContent(messageResponse.data)
-						if (emailData) {
-							emailsWithContent.push(emailData)
-						}
-					}
-				}
-
-				console.log(`✅ Batch completed. Total processed so far: ${emailsWithContent.length}`)
-			}
-
-			console.log(`🎯 Successfully parsed ${emailsWithContent.length} emails with content from last ${days} days`)
-			return emailsWithContent
-
-		} catch (error) {
-			console.error(`❌ Error fetching emails from last ${days} days:`, error)
-			throw new Error(`Failed to fetch emails from last ${days} days: ${error}`)
-		}
-	}
 }
 
-// Export singleton instance
-export const gmailService = new GmailService()
+// Create singleton instance
+const gmailService = new GmailService()
 
-// Export individual functions for convenience
+// Export only the functions that are actually used
 export const getGmailAuthUrl = () => gmailService.getAuthUrl()
-export const setGmailCredentials = (code: string) => gmailService.setCredentials(code)
 export const fetchGmailEmails = (accessToken: string, maxResults?: number, query?: string) => 
 	gmailService.fetchEmails(accessToken, maxResults, query)
-export const listEmailsToConsole = (accessToken: string, maxResults?: number, query?: string) => 
-	gmailService.listEmailsToConsole(accessToken, maxResults, query)
-
-// New exports for today's emails with content
 export const fetchTodaysEmailsWithContent = (accessToken: string, maxResults?: number) => 
 	gmailService.fetchTodaysEmailsWithContent(accessToken, maxResults)
-
-export const listTodaysEmailsWithContentToConsole = (accessToken: string, maxResults?: number) => 
-	gmailService.listTodaysEmailsWithContentToConsole(accessToken, maxResults)
-
-// New export for fetching emails from a specific period
-export const fetchEmailsFromPeriod = (accessToken: string, days: number = 7, maxResults?: number) => 
-	gmailService.fetchEmailsFromPeriod(accessToken, days, maxResults)
