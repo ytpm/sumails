@@ -149,18 +149,18 @@ export default function SettingsClient() {
 								onProfileChange={updateProfile}
 							/>
 
+							{/* Notification Preferences */}
+							<NotificationPreferencesCard
+								notifications={settings!.notifications}
+								onNotificationChange={updateNotifications}
+							/>
+
 							{/* Subscription Card - Always show */}
 							<SubscriptionCard
 								subscriptionData={userSubscription}
 								onManageSubscription={handleManageSubscription}
 								onCancelSubscription={handleCancelSubscription}
 								onUpgrade={handleUpgrade}
-							/>
-
-							{/* Notification Preferences */}
-							<NotificationPreferencesCard
-								notifications={settings!.notifications}
-								onNotificationChange={updateNotifications}
 							/>
 
 							{/* Account Deletion */}
