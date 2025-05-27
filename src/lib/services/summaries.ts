@@ -43,14 +43,16 @@ export async function createEmailSummary(
  * @param userId - The user ID to fetch summaries for
  * @param limit - Maximum number of summaries to return (default: 10)
  * @param accountId - Optional: filter by specific connected account ID
+ * @param offset - Number of records to skip (default: 0)
  * @returns Array of email summaries with account information
  */
 export async function getUserEmailSummaries(
 	userId: string,
 	limit: number = 10,
-	accountId?: string
+	accountId?: string,
+	offset: number = 0
 ): Promise<EmailSummaryWithAccount[]> {
-	console.log(`📧 Fetching email summaries for user ${userId}${accountId ? ` (account: ${accountId})` : ''}`)
+	console.log(`📧 Fetching email summaries for user ${userId}${accountId ? ` (account: ${accountId})` : ''} (limit: ${limit}, offset: ${offset})`)
 	
 	const supabase = await createClient(true)
 	
@@ -65,7 +67,7 @@ export async function getUserEmailSummaries(
 		`)
 		.eq('user_id', userId)
 		.order('created_at', { ascending: false })
-		.limit(limit)
+		.range(offset, offset + limit - 1)
 
 	// Add account filter if specified
 	if (accountId) {

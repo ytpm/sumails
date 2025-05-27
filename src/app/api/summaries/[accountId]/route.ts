@@ -9,10 +9,10 @@ import {
 // GET /api/summaries/[accountId] - Get summaries for a specific account
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { accountId: string } }
+	{ params }: { params: Promise<{ accountId: string }> }
 ) {
 	try {
-		const accountId = params.accountId
+		const { accountId } = await params
 		
 		if (!accountId) {
 			return NextResponse.json(
@@ -34,6 +34,7 @@ export async function GET(
 
 		const { searchParams } = new URL(request.url)
 		const limit = parseInt(searchParams.get('limit') || '10')
+		const offset = parseInt(searchParams.get('offset') || '0')
 		const latest = searchParams.get('latest') === 'true'
 
 		console.log(`📧 Getting summaries for account ${accountId}`)
@@ -48,7 +49,7 @@ export async function GET(
 			})
 		} else {
 			// Get multiple summaries with pagination
-			const summaries = await getUserEmailSummaries(user.id, limit, accountId)
+			const summaries = await getUserEmailSummaries(user.id, limit, accountId, offset)
 			
 			return NextResponse.json({
 				success: true,
@@ -69,10 +70,10 @@ export async function GET(
 // POST /api/summaries/[accountId] - Generate summary for a specific account
 export async function POST(
 	request: NextRequest,
-	{ params }: { params: { accountId: string } }
+	{ params }: { params: Promise<{ accountId: string }> }
 ) {
 	try {
-		const accountId = params.accountId
+		const { accountId } = await params
 		
 		if (!accountId) {
 			return NextResponse.json(

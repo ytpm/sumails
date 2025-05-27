@@ -7,13 +7,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
-import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle, Clock, Zap, Eye, Calendar } from 'lucide-react'
+import { Mail, Plus, Trash2, RefreshCw, ArrowLeft, CheckCircle, AlertCircle, Clock, Zap, Eye, Calendar, FileText } from 'lucide-react'
 import type { MailboxWithStatus } from '@/lib/services/mailboxes'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { InboxStatus } from '@/types/email'
 import MailboxesLoadingSkeleton from './mailboxes/MailboxesLoadingSkeleton'
+import SummariesDialog from './mailboxes/SummariesDialog'
 
 interface MailboxesClientProps {
 	initialAccounts: MailboxWithStatus[]
@@ -41,6 +42,8 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 	const [generatingForAccount, setGeneratingForAccount] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [success, setSuccess] = useState<string | null>(null)
+	const [summariesDialogOpen, setSummariesDialogOpen] = useState(false)
+	const [selectedAccountForSummaries, setSelectedAccountForSummaries] = useState<MailboxWithStatus | null>(null)
 
 	// Function to refresh accounts from server
 	const refreshAccounts = async () => {
@@ -278,6 +281,11 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 		}
 	}
 
+	const handleOpenSummaries = (account: MailboxWithStatus) => {
+		setSelectedAccountForSummaries(account)
+		setSummariesDialogOpen(true)
+	}
+
 	const getStatusBadge = (status: string) => {
 		const statusConfig = {
 			'active': { color: 'bg-green-100 text-green-800 border-green-200', icon: CheckCircle },
@@ -468,6 +476,14 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 												<Button
 													variant="outline"
 													size="sm"
+													onClick={() => handleOpenSummaries(account)}
+												>
+													<FileText className="h-4 w-4 mr-2" />
+													Summaries
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
 													onClick={() => handleSyncAccount(account.id, account.email)}
 													disabled={disconnectingId === account.id || syncingId === account.id}
 												>
@@ -572,6 +588,11 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 					</CardContent>
 				</Card>
 			</div>
+			<SummariesDialog
+				open={summariesDialogOpen}
+				onClose={() => setSummariesDialogOpen(false)}
+				account={selectedAccountForSummaries}
+			/>
 		</div>
 	)
 } 
