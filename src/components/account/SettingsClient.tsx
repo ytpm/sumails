@@ -71,6 +71,11 @@ export default function SettingsClient() {
 		toast.info('Subscription cancellation flow...')
 	}
 
+	const handleUpgrade = () => {
+		// Redirect to home page pricing section
+		router.push('/#pricing')
+	}
+
 	const handleDeleteAccount = async () => {
 		try {
 			setIsDeletingAccount(true)
@@ -144,14 +149,13 @@ export default function SettingsClient() {
 								onProfileChange={updateProfile}
 							/>
 
-							{/* Subscription Card - Only show if subscribed */}
-							{userSubscription && (
-								<SubscriptionCard
-									subscriptionData={userSubscription}
-									onManageSubscription={handleManageSubscription}
-									onCancelSubscription={handleCancelSubscription}
-								/>
-							)}
+							{/* Subscription Card - Always show */}
+							<SubscriptionCard
+								subscriptionData={userSubscription}
+								onManageSubscription={handleManageSubscription}
+								onCancelSubscription={handleCancelSubscription}
+								onUpgrade={handleUpgrade}
+							/>
 
 							{/* Notification Preferences */}
 							<NotificationPreferencesCard
