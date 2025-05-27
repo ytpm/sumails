@@ -4,6 +4,7 @@ import { cn } from "@/utils";
 import { Inbox, Menu, X, User, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,8 @@ const Header = () => {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const { isAuthenticated, authUser, signOut, isLoading } = useAuth();
+	const router = useRouter();
+	const pathname = usePathname();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -34,6 +37,17 @@ const Header = () => {
 	};
 
 	const scrollToSection = (sectionId: string) => {
+		// Close mobile menu first
+		setIsMobileMenuOpen(false);
+		
+		// If we're not on the home page, navigate there first
+		if (pathname !== '/') {
+			// Navigate to home page with the section hash
+			router.push(`/#${sectionId}`);
+			return;
+		}
+		
+		// If we're already on the home page, scroll directly
 		const element = document.getElementById(sectionId);
 		if (element) {
 			element.scrollIntoView({
@@ -41,7 +55,6 @@ const Header = () => {
 				block: 'start',
 			});
 		}
-		setIsMobileMenuOpen(false);
 	};
 
 	const AuthButtons = () => {
