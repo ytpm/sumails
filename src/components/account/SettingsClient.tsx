@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Trash2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useSettings } from '@/hooks/use-settings'
 import { FloatingSaveBar } from '@/components/ui/floating-save-bar'
+import { ConfirmationDialog } from '@/components/dialogs'
 import {
 	AccountInformationCard,
 	SummarySettingsCard,
@@ -43,6 +45,7 @@ export default function SettingsClient() {
 
 	const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 	const [hasInitialized, setHasInitialized] = useState(false)
+	const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
 
 	// Track when we've successfully loaded once
 	useEffect(() => {
@@ -69,15 +72,12 @@ export default function SettingsClient() {
 	}
 
 	const handleDeleteAccount = async () => {
-		if (!confirm('Are you sure you want to delete your account? This action cannot be undone and will remove all your data.')) {
-			return
-		}
-
 		try {
 			setIsDeletingAccount(true)
 			// TODO: Implement actual account deletion
 			await new Promise(resolve => setTimeout(resolve, 2000))
 			toast.success('Account deletion initiated. You will be logged out shortly.')
+			setShowDeleteConfirmation(false)
 			// TODO: Sign out user and redirect
 		} catch (error) {
 			toast.error('Failed to delete account. Please try again.')
@@ -161,7 +161,7 @@ export default function SettingsClient() {
 
 							{/* Account Deletion */}
 							<AccountDeletionCard
-								onDeleteAccount={handleDeleteAccount}
+								onDeleteAccount={() => setShowDeleteConfirmation(true)}
 								isDeletingAccount={isDeletingAccount}
 							/>
 						</div>
@@ -180,6 +180,20 @@ export default function SettingsClient() {
 					</div>
 				</div>
 			</div>
+
+			{/* Account Deletion Confirmation Dialog */}
+			<ConfirmationDialog
+				open={showDeleteConfirmation}
+				onOpenChange={setShowDeleteConfirmation}
+				title="Delete Account"
+				description="Are you sure you want to delete your account? This action cannot be undone and will remove all your data permanently."
+				confirmText="Delete Account"
+				cancelText="Cancel"
+				confirmVariant="destructive"
+				onConfirm={handleDeleteAccount}
+				isLoading={isDeletingAccount}
+				icon={<Trash2 className="h-5 w-5 text-destructive" />}
+			/>
 
 			{/* Floating Save Bar */}
 			<FloatingSaveBar
