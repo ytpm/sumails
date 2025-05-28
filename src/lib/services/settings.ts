@@ -169,21 +169,46 @@ class SettingsService {
 
 	async getSubscriptionData(userId: string): Promise<Subscription | null> {
 		try {
-			const { data: subscription, error } = await this.supabase
+			console.log(`🔍 Fetching subscription data for user: ${userId}`)
+			
+			const { data: subscriptions, error } = await this.supabase
 				.from('subscriptions')
 				.select('*')
 				.eq('user_id', userId)
 				.eq('status', 'active')
-				.single()
+				.limit(1)
 
-			if (error && error.code !== 'PGRST116') {
-				throw error
+			if (error) {
+				console.error('❌ Supabase subscription query error:', {
+					code: error.code,
+					message: error.message,
+					details: error.details,
+					hint: error.hint
+				})
+				
+				// PGRST301 means table doesn't exist or access denied
+				if (error.code === 'PGRST301') {
+					console.warn('⚠️ Subscriptions table does not exist or access is denied. User will be treated as free tier.')
+					return null
+				}
+				
+				// For other errors, log and return null to gracefully degrade to free tier
+				console.warn('⚠️ Subscription query failed, treating user as free tier:', error)
+				return null
 			}
 
-			return subscription
+			// Check if any subscriptions were found
+			if (!subscriptions || subscriptions.length === 0) {
+				console.log('ℹ️ No active subscription found for user (free tier)')
+				return null
+			}
+
+			console.log('✅ Active subscription found for user')
+			return subscriptions[0]
 		} catch (error) {
-			console.error('Error fetching subscription data:', error)
-			throw error
+			console.error('❌ Error fetching subscription data:', error)
+			// Return null to gracefully degrade to free tier instead of throwing
+			return null
 		}
 	}
 }
