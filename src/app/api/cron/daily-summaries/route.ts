@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { generateAllAccountSummaries } from '@/lib/services/summary-orchestrator'
+import { logger } from '@/lib/logger/default-logger'
 
 // POST /api/cron/daily-summaries - Daily CRON job for generating summaries
 export async function POST(request: NextRequest) {
+	logger.debug('CRON-DAILY-SUMMARIES', 'POST', 'Starting daily summary CRON job')
 	try {
 		// Verify this is a legitimate CRON request
 		const authHeader = request.headers.get('authorization')
 		const cronSecret = process.env.CRON_SECRET
 
 		if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-			console.error('❌ Unauthorized CRON request')
+			logger.error('CRON-DAILY-SUMMARIES', 'POST', 'Unauthorized CRON request')
 			return NextResponse.json(
 				{ error: 'Unauthorized' },
 				{ status: 401 }
 			)
 		}
 
-		console.log('⏰ Starting daily summary CRON job')
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', 'Starting daily summary CRON job')
 		const startTime = Date.now()
 
 		// Get all users from the database
@@ -28,14 +30,14 @@ export async function POST(request: NextRequest) {
 			.select('id')
 
 		if (usersError) {
-			console.error('❌ Failed to fetch users:', usersError)
+			logger.error('CRON-DAILY-SUMMARIES', 'POST', 'Failed to fetch users:', usersError)
 			return NextResponse.json(
 				{ error: 'Failed to fetch users' },
 				{ status: 500 }
 			)
 		}
 
-		console.log(`👥 Found ${users.length} users to process`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Found ${users.length} users to process`)
 
 		const results = []
 		let totalSuccessfulUsers = 0
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
 
 		// Process each user
 		for (const user of users) {
-			console.log(`\n🔄 Processing user: ${user.id}`)
+			logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Processing user: ${user.id}`)
 			
 			try {
 				const userResult = await generateAllAccountSummaries(
@@ -71,13 +73,13 @@ export async function POST(request: NextRequest) {
 						totalEmailsProcessed += result.emailCount || 0
 					})
 
-					console.log(`✅ User ${user.id}: ${userResult.successfulAccounts}/${userResult.totalAccounts} accounts processed`)
+					logger.debug('CRON-DAILY-SUMMARIES', 'POST', `User ${user.id}: ${userResult.successfulAccounts}/${userResult.totalAccounts} accounts processed`)
 				} else {
-					console.error(`❌ User ${user.id}: ${userResult.message}`)
+					logger.error('CRON-DAILY-SUMMARIES', 'POST', `User ${user.id}: ${userResult.message}`)
 				}
 
 			} catch (userError) {
-				console.error(`❌ Error processing user ${user.id}:`, userError)
+				logger.error('CRON-DAILY-SUMMARIES', 'POST', `Error processing user ${user.id}:`, userError)
 				results.push({
 					userId: user.id,
 					success: false,
@@ -92,11 +94,11 @@ export async function POST(request: NextRequest) {
 		const endTime = Date.now()
 		const duration = Math.round((endTime - startTime) / 1000)
 
-		console.log(`\n✅ Daily summary CRON job completed`)
-		console.log(`⏱️  Duration: ${duration} seconds`)
-		console.log(`👥 Users processed: ${totalSuccessfulUsers}/${users.length}`)
-		console.log(`📧 Accounts processed: ${totalAccountsProcessed}`)
-		console.log(`📨 Emails processed: ${totalEmailsProcessed}`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Daily summary CRON job completed`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Duration: ${duration} seconds`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Users processed: ${totalSuccessfulUsers}/${users.length}`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Accounts processed: ${totalAccountsProcessed}`)
+		logger.debug('CRON-DAILY-SUMMARIES', 'POST', `Emails processed: ${totalEmailsProcessed}`)
 
 		// TODO: Send notifications for summaries that need attention
 		// TODO: Log CRON job results to monitoring system
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
 		})
 
 	} catch (error) {
-		console.error('❌ Error in daily summary CRON job:', error)
+		logger.error('CRON-DAILY-SUMMARIES', 'POST', 'Error in daily summary CRON job:', error)
 		return NextResponse.json(
 			{ error: 'CRON job failed' },
 			{ status: 500 }
@@ -125,6 +127,7 @@ export async function POST(request: NextRequest) {
 
 // GET /api/cron/daily-summaries - Health check for CRON endpoint
 export async function GET(request: NextRequest) {
+	logger.debug('CRON-DAILY-SUMMARIES', 'GET', 'Health check for daily summary CRON endpoint')
 	return NextResponse.json({
 		success: true,
 		message: 'Daily summaries CRON endpoint is healthy',
