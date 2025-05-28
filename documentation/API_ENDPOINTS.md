@@ -115,7 +115,7 @@ Generate summary for a specific account.
 
 ## ⏰ CRON Jobs
 
-### `POST /api/cron/daily-summaries`
+### `GET /api/cron/daily-summaries`
 Daily CRON job for generating summaries for all users.
 
 **Headers:**
@@ -145,18 +145,6 @@ Authorization: Bearer YOUR_CRON_SECRET
       "results": [...]
     }
   ]
-}
-```
-
-### `GET /api/cron/daily-summaries`
-Health check for CRON endpoint.
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Daily summaries CRON endpoint is healthy",
-  "timestamp": "2024-01-15T10:30:00Z"
 }
 ```
 
@@ -251,7 +239,7 @@ curl -X POST /api/notifications/test \
 ### Setup Daily CRON Job
 ```bash
 # Add to your CRON scheduler (e.g., Vercel Cron, GitHub Actions)
-curl -X POST /api/cron/daily-summaries \
+curl -X GET /api/cron/daily-summaries \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 

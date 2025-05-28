@@ -3,11 +3,11 @@ import { createClient } from '@/utils/supabase/server';
 import { generateAllAccountSummaries } from '@/lib/services/summary-orchestrator';
 import { logger } from '@/lib/logger/default-logger';
 
-// POST /api/cron/daily-summaries - Daily CRON job for generating summaries
-export async function POST(request: NextRequest) {
+// GET /api/cron/daily-summaries - Daily CRON job for generating summaries
+export async function GET(request: NextRequest) {
   logger.debug(
     'CRON-DAILY-SUMMARIES',
-    'POST',
+    'GET',
     'Starting daily summary CRON job'
   );
   try {
@@ -16,13 +16,13 @@ export async function POST(request: NextRequest) {
     const cronSecret = process.env.CRON_SECRET;
 
     if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      logger.error('CRON-DAILY-SUMMARIES', 'POST', 'Unauthorized CRON request');
+      logger.error('CRON-DAILY-SUMMARIES', 'GET', 'Unauthorized CRON request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       'Starting daily summary CRON job'
     );
     const startTime = Date.now();
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (usersError) {
       logger.error(
         'CRON-DAILY-SUMMARIES',
-        'POST',
+        'GET',
         'Failed to fetch users:',
         usersError
       );
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Found ${users.length} users to process`
     );
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     for (const user of users) {
       logger.debug(
         'CRON-DAILY-SUMMARIES',
-        'POST',
+        'GET',
         `Processing user: ${user.id}`
       );
 
@@ -93,20 +93,20 @@ export async function POST(request: NextRequest) {
 
           logger.debug(
             'CRON-DAILY-SUMMARIES',
-            'POST',
+            'GET',
             `User ${user.id}: ${userResult.successfulAccounts}/${userResult.totalAccounts} accounts processed`
           );
         } else {
           logger.error(
             'CRON-DAILY-SUMMARIES',
-            'POST',
+            'GET',
             `User ${user.id}: ${userResult.message}`
           );
         }
       } catch (userError) {
         logger.error(
           'CRON-DAILY-SUMMARIES',
-          'POST',
+          'GET',
           `Error processing user ${user.id}:`,
           userError
         );
@@ -128,27 +128,27 @@ export async function POST(request: NextRequest) {
 
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Daily summary CRON job completed`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Duration: ${duration} seconds`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Users processed: ${totalSuccessfulUsers}/${users.length}`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Accounts processed: ${totalAccountsProcessed}`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       `Emails processed: ${totalEmailsProcessed}`
     );
 
@@ -170,24 +170,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logger.error(
       'CRON-DAILY-SUMMARIES',
-      'POST',
+      'GET',
       'Error in daily summary CRON job:',
       error
     );
     return NextResponse.json({ error: 'CRON job failed' }, { status: 500 });
   }
-}
-
-// GET /api/cron/daily-summaries - Health check for CRON endpoint
-export async function GET(request: NextRequest) {
-  logger.debug(
-    'CRON-DAILY-SUMMARIES',
-    'GET',
-    'Health check for daily summary CRON endpoint'
-  );
-  return NextResponse.json({
-    success: true,
-    message: 'Daily summaries CRON endpoint is healthy',
-    timestamp: new Date().toISOString(),
-  });
 }
