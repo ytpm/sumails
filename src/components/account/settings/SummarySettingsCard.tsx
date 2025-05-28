@@ -172,9 +172,9 @@ export default function SummarySettingsCard({
 							<SelectValue placeholder="Select tone" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="formal">Formal - Professional and structured</SelectItem>
+							<SelectItem value="professional">Professional - Formal and structured</SelectItem>
 							<SelectItem value="friendly">Friendly - Conversational and warm</SelectItem>
-							<SelectItem value="minimalist">Minimalist - Brief and to the point</SelectItem>
+							<SelectItem value="concise">Concise - Brief and to the point</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>

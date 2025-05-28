@@ -86,10 +86,49 @@ class SettingsService {
 
 	async updateUserSettings(userId: string, settings: Partial<SettingsData>): Promise<void> {
 		try {
+			// Filter out undefined values to prevent validation errors
+			const cleanSettings = JSON.parse(JSON.stringify(settings, (key, value) => {
+				return value === undefined ? undefined : value;
+			}));
+
+			// Remove undefined summary settings fields
+			if (cleanSettings.summarySettings) {
+				Object.keys(cleanSettings.summarySettings).forEach(key => {
+					if (cleanSettings.summarySettings[key] === undefined) {
+						delete cleanSettings.summarySettings[key];
+					}
+				});
+
+				// Fix preferredTime format - strip seconds if present (HH:MM:SS -> HH:MM)
+				if (cleanSettings.summarySettings.preferredTime) {
+					const timeValue = cleanSettings.summarySettings.preferredTime;
+					if (timeValue.length === 8 && timeValue.includes(':')) {
+						// Convert "09:00:00" to "09:00"
+						cleanSettings.summarySettings.preferredTime = timeValue.substring(0, 5);
+						console.log('⏰ Fixed preferredTime format:', `"${timeValue}" -> "${cleanSettings.summarySettings.preferredTime}"`);
+					}
+				}
+			}
+
+			console.log('🔍 Validating settings data:', JSON.stringify(cleanSettings, null, 2))
+
+			// Debug the preferredTime specifically
+			if (cleanSettings.summarySettings?.preferredTime) {
+				console.log('⏰ PreferredTime value:', `"${cleanSettings.summarySettings.preferredTime}"`)
+				console.log('⏰ PreferredTime type:', typeof cleanSettings.summarySettings.preferredTime)
+				console.log('⏰ PreferredTime length:', cleanSettings.summarySettings.preferredTime.length)
+				
+				// Test the regex manually
+				const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+				const isValid = timeRegex.test(cleanSettings.summarySettings.preferredTime)
+				console.log('⏰ Regex test result:', isValid)
+			}
+
 			// Validate settings data
-			const validation = validateSettingsUpdate(settings)
+			const validation = validateSettingsUpdate(cleanSettings)
 			if (!validation.success) {
-				throw new Error(`Invalid settings data: ${validation.error.message}`)
+				console.error('❌ Validation failed:', validation.error)
+				throw new Error(`Invalid settings data: ${JSON.stringify(validation.error.errors)}`)
 			}
 
 			// Update user_settings table
@@ -106,12 +145,20 @@ class SettingsService {
 						userSettingsUpdate.summary_receive_by_email = settings.summarySettings.receiveBy.email
 						userSettingsUpdate.summary_receive_by_whatsapp = settings.summarySettings.receiveBy.whatsapp
 					}
-					userSettingsUpdate.summary_preferred_time = settings.summarySettings.preferredTime
-					userSettingsUpdate.summary_timezone = settings.summarySettings.timezone
-					userSettingsUpdate.summary_language = settings.summarySettings.language
+					if (settings.summarySettings.preferredTime !== undefined) {
+						userSettingsUpdate.summary_preferred_time = settings.summarySettings.preferredTime
+					}
+					if (settings.summarySettings.timezone !== undefined) {
+						userSettingsUpdate.summary_timezone = settings.summarySettings.timezone
+					}
+					if (settings.summarySettings.language !== undefined) {
+						userSettingsUpdate.summary_language = settings.summarySettings.language
+					}
 				}
 
 				userSettingsUpdate.updated_at = new Date().toISOString()
+
+				console.log('📤 Updating user settings:', userSettingsUpdate)
 
 				// Check if user_settings record exists
 				const { data: existingSettings } = await this.supabase
@@ -152,12 +199,11 @@ class SettingsService {
 					updated_at: new Date().toISOString(),
 				}
 
+				// Use update instead of upsert since profiles should already exist
 				const { error } = await this.supabase
 					.from('profiles')
-					.upsert({
-						id: userId,
-						...profileUpdate,
-					})
+					.update(profileUpdate)
+					.eq('id', userId)
 
 				if (error) throw error
 			}
