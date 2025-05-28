@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function HashScrollHandler() {
+function HashScrollHandlerInner() {
 	const searchParams = useSearchParams()
 
 	useEffect(() => {
@@ -27,4 +27,12 @@ export default function HashScrollHandler() {
 	}, [searchParams])
 
 	return null
+}
+
+export default function HashScrollHandler() {
+	return (
+		<Suspense fallback={null}>
+			<HashScrollHandlerInner />
+		</Suspense>
+	)
 } 

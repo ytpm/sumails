@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -28,7 +28,7 @@ interface SummaryStatus {
 	hasRecentSummary: boolean
 }
 
-export default function MailboxesClient({ initialAccounts }: MailboxesClientProps) {
+function MailboxesClientInner({ initialAccounts }: MailboxesClientProps) {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { isLoading, isAuthenticated } = useAuth()
@@ -594,5 +594,13 @@ export default function MailboxesClient({ initialAccounts }: MailboxesClientProp
 				account={selectedAccountForSummaries}
 			/>
 		</div>
+	)
+}
+
+export default function MailboxesClient({ initialAccounts }: MailboxesClientProps) {
+	return (
+		<Suspense fallback={<MailboxesLoadingSkeleton />}>
+			<MailboxesClientInner initialAccounts={initialAccounts} />
+		</Suspense>
 	)
 } 
