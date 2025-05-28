@@ -1,6 +1,20 @@
 {
-  "crons": [{
-    "path": "/api/cron/daily-summaries",
-    "schedule": "0 16 * * *"
-  }]
+  "crons": [
+    {
+      "path": "/api/cron/daily-summaries?time=07:00",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summaries?time=09:00", 
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summaries?time=12:00",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summaries?time=18:00",
+      "schedule": "0 18 * * *"
+    }
+  ]
 }

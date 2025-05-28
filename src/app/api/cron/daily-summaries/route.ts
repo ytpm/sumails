@@ -3,13 +3,58 @@ import { createClient } from '@/utils/supabase/server';
 import { generateAllAccountSummaries } from '@/lib/services/summary-orchestrator';
 import { logger } from '@/lib/logger/default-logger';
 
-// GET /api/cron/daily-summaries - Daily CRON job for generating summaries
+// Helper function to convert UTC time to user's local time and check if it matches preferred time
+function shouldReceiveSummaryAtTime(
+  utcTime: string, 
+  userTimezone: string, 
+  userPreferredTime: string
+): boolean {
+  try {
+    // Parse the UTC time (format: "HH:MM")
+    const [utcHours, utcMinutes] = utcTime.split(':').map(Number);
+    
+    // Create a date object representing today at the UTC time
+    const utcDate = new Date();
+    utcDate.setUTCHours(utcHours, utcMinutes, 0, 0);
+    
+    // Convert to user's timezone
+    const userLocalTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: userTimezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(utcDate);
+    
+    // Compare with user's preferred time
+    return userLocalTime === userPreferredTime;
+  } catch (error) {
+    logger.error(
+      'CRON-DAILY-SUMMARIES',
+      'shouldReceiveSummaryAtTime',
+      `Error converting timezone for user timezone ${userTimezone}:`,
+      error
+    );
+    // Fallback: if timezone conversion fails, send at UTC time match
+    return utcTime === userPreferredTime;
+  }
+}
+
+// GET /api/cron/daily-summaries - Time-specific CRON job for generating summaries
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const targetTime = searchParams.get('time');
+  
+  if (!targetTime) {
+    logger.error('CRON-DAILY-SUMMARIES', 'GET', 'Missing time parameter');
+    return NextResponse.json({ error: 'Time parameter is required' }, { status: 400 });
+  }
+
   logger.debug(
     'CRON-DAILY-SUMMARIES',
     'GET',
-    'Starting daily summary CRON job'
+    `Starting daily summary CRON job for time: ${targetTime}`
   );
+
   try {
     // Verify this is a legitimate CRON request
     const authHeader = request.headers.get('authorization');
@@ -20,25 +65,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    logger.debug(
-      'CRON-DAILY-SUMMARIES',
-      'GET',
-      'Starting daily summary CRON job'
-    );
     const startTime = Date.now();
 
-    // Get all users from the database
+    // Get all users with their settings from the database
     const supabase = await createClient(true); // Use service key
 
-    const { data: users, error: usersError } = await supabase
+    const { data: usersWithSettings, error: usersError } = await supabase
       .from('profiles')
-      .select('id');
+      .select(`
+        id,
+        user_settings!inner(
+          summary_preferred_time,
+          summary_timezone,
+          summary_receive_by_email,
+          summary_receive_by_whatsapp
+        )
+      `)
+      .not('user_settings.summary_preferred_time', 'is', null)
+      .not('user_settings.summary_timezone', 'is', null);
 
     if (usersError) {
       logger.error(
         'CRON-DAILY-SUMMARIES',
         'GET',
-        'Failed to fetch users:',
+        'Failed to fetch users with settings:',
         usersError
       );
       return NextResponse.json(
@@ -47,10 +97,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Filter users who should receive summaries at this UTC time
+    const eligibleUsers = usersWithSettings.filter(user => {
+      const settings = Array.isArray(user.user_settings) ? user.user_settings[0] : user.user_settings;
+      
+      // Skip users who haven't enabled any delivery method
+      if (!settings?.summary_receive_by_email && !settings?.summary_receive_by_whatsapp) {
+        return false;
+      }
+      
+      // Check if this UTC time matches the user's preferred local time
+      return shouldReceiveSummaryAtTime(
+        targetTime,
+        settings.summary_timezone || 'UTC',
+        settings.summary_preferred_time || '09:00'
+      );
+    });
+
     logger.debug(
       'CRON-DAILY-SUMMARIES',
       'GET',
-      `Found ${users.length} users to process`
+      `Found ${eligibleUsers.length} eligible users out of ${usersWithSettings.length} total users for time ${targetTime}`
     );
 
     const results = [];
@@ -58,12 +125,14 @@ export async function GET(request: NextRequest) {
     let totalAccountsProcessed = 0;
     let totalEmailsProcessed = 0;
 
-    // Process each user
-    for (const user of users) {
+    // Process each eligible user
+    for (const user of eligibleUsers) {
+      const settings = Array.isArray(user.user_settings) ? user.user_settings[0] : user.user_settings;
+      
       logger.debug(
         'CRON-DAILY-SUMMARIES',
         'GET',
-        `Processing user: ${user.id}`
+        `Processing user: ${user.id} (preferred time: ${settings?.summary_preferred_time}, timezone: ${settings?.summary_timezone})`
       );
 
       try {
@@ -80,6 +149,8 @@ export async function GET(request: NextRequest) {
           totalAccounts: userResult.totalAccounts,
           successfulAccounts: userResult.successfulAccounts,
           results: userResult.results,
+          userPreferredTime: settings?.summary_preferred_time,
+          userTimezone: settings?.summary_timezone,
         });
 
         if (userResult.success) {
@@ -119,6 +190,8 @@ export async function GET(request: NextRequest) {
           totalAccounts: 0,
           successfulAccounts: 0,
           results: [],
+          userPreferredTime: settings?.summary_preferred_time || 'unknown',
+          userTimezone: settings?.summary_timezone || 'unknown',
         });
       }
     }
@@ -129,7 +202,7 @@ export async function GET(request: NextRequest) {
     logger.debug(
       'CRON-DAILY-SUMMARIES',
       'GET',
-      `Daily summary CRON job completed`
+      `Daily summary CRON job completed for time ${targetTime}`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
@@ -139,7 +212,7 @@ export async function GET(request: NextRequest) {
     logger.debug(
       'CRON-DAILY-SUMMARIES',
       'GET',
-      `Users processed: ${totalSuccessfulUsers}/${users.length}`
+      `Users processed: ${totalSuccessfulUsers}/${eligibleUsers.length} eligible users`
     );
     logger.debug(
       'CRON-DAILY-SUMMARIES',
@@ -152,15 +225,14 @@ export async function GET(request: NextRequest) {
       `Emails processed: ${totalEmailsProcessed}`
     );
 
-    // TODO: Send notifications for summaries that need attention
-    // TODO: Log CRON job results to monitoring system
-
     return NextResponse.json({
       success: true,
-      message: `Daily summaries completed in ${duration}s`,
+      message: `Daily summaries completed for ${targetTime} in ${duration}s`,
       stats: {
         duration,
-        totalUsers: users.length,
+        targetTime,
+        totalEligibleUsers: eligibleUsers.length,
+        totalUsersInDb: usersWithSettings.length,
         successfulUsers: totalSuccessfulUsers,
         totalAccountsProcessed,
         totalEmailsProcessed,
@@ -171,9 +243,12 @@ export async function GET(request: NextRequest) {
     logger.error(
       'CRON-DAILY-SUMMARIES',
       'GET',
-      'Error in daily summary CRON job:',
+      `Error in daily summary CRON job for time ${targetTime}:`,
       error
     );
-    return NextResponse.json({ error: 'CRON job failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'CRON job failed',
+      targetTime 
+    }, { status: 500 });
   }
 }
