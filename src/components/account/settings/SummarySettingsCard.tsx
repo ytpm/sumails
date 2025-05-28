@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings, Clock, Globe, MessageSquare, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import PhoneVerification from './PhoneVerification'
+import TimezoneSelector from './TimezoneSelector'
 
 interface SummarySettings {
 	receiveBy: {
@@ -141,46 +142,18 @@ export default function SummarySettingsCard({
 								<SelectValue placeholder="Select time" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="06:00">6:00 AM</SelectItem>
-								<SelectItem value="07:00">7:00 AM</SelectItem>
-								<SelectItem value="08:00">8:00 AM</SelectItem>
-								<SelectItem value="09:00">9:00 AM</SelectItem>
-								<SelectItem value="10:00">10:00 AM</SelectItem>
-								<SelectItem value="11:00">11:00 AM</SelectItem>
-								<SelectItem value="12:00">12:00 PM</SelectItem>
-								<SelectItem value="18:00">6:00 PM</SelectItem>
-								<SelectItem value="19:00">7:00 PM</SelectItem>
-								<SelectItem value="20:00">8:00 PM</SelectItem>
+								<SelectItem value="07:00">7:00 AM - Early morning start</SelectItem>
+								<SelectItem value="09:00">9:00 AM - Work day begins</SelectItem>
+								<SelectItem value="12:00">12:00 PM - Lunch break</SelectItem>
+								<SelectItem value="18:00">6:00 PM - End of work day</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="timezone" className="flex items-center gap-2">
-							<Globe className="h-4 w-4" />
-							Timezone
-						</Label>
-						<Select
-							value={settings.timezone}
-							onValueChange={(value) => onSettingChange('timezone', value)}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Select timezone" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="UTC">UTC</SelectItem>
-								<SelectItem value="America/New_York">Eastern Time</SelectItem>
-								<SelectItem value="America/Chicago">Central Time</SelectItem>
-								<SelectItem value="America/Denver">Mountain Time</SelectItem>
-								<SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-								<SelectItem value="Europe/London">London</SelectItem>
-								<SelectItem value="Europe/Paris">Paris</SelectItem>
-								<SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-								<SelectItem value="Asia/Shanghai">Shanghai</SelectItem>
-								<SelectItem value="Australia/Sydney">Sydney</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
+					<TimezoneSelector
+						value={settings.timezone}
+						onValueChange={(value) => onSettingChange('timezone', value)}
+					/>
 				</div>
 
 				<Separator />
