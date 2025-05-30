@@ -23,7 +23,7 @@ interface SummarySettingsCardProps {
 	whatsappPhone?: string | null
 	onReceiveByChange: (key: keyof SummarySettings['receiveBy']) => void
 	onSettingChange: (key: keyof Omit<SummarySettings, 'receiveBy'>, value: string) => void
-	onProfileChange: (key: 'whatsappNumber', value: string | null) => void
+	onProfileChange?: (key: 'whatsappNumber', value: string | null) => void
 }
 
 export default function SummarySettingsCard({ 
@@ -50,7 +50,7 @@ export default function SummarySettingsCard({
 
 	const handlePhoneVerificationComplete = (phoneNumber: string) => {
 		// Save the verified phone number
-		onProfileChange('whatsappNumber', phoneNumber)
+		onProfileChange?.('whatsappNumber', phoneNumber)
 		setShowPhoneVerification(false)
 	}
 

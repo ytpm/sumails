@@ -138,15 +138,23 @@ export default function SettingsClient() {
 						{/* Main Settings */}
 						<div className="lg:col-span-2 space-y-6">
 							{/* Account Information */}
-							<AccountInformationCard email={authUser?.email} />
+							<AccountInformationCard 
+								email={authUser?.email}
+								fullName={settings!.profile.fullName || undefined}
+								phoneNumber={settings!.profile.phoneNumber || undefined}
+								personalContext={settings!.profile.personalContext || undefined}
+								onFullNameChange={(value) => updateProfile('fullName', value)}
+								onPhoneNumberChange={(value) => updateProfile('phoneNumber', value)}
+								onPersonalContextChange={(value) => updateProfile('personalContext', value)}
+							/>
 
 							{/* Summary Settings */}
 							<SummarySettingsCard
 								settings={settings!.summarySettings}
-								whatsappPhone={settings!.profile.whatsappNumber}
 								onReceiveByChange={updateSummaryReceiveBy}
 								onSettingChange={updateSummarySetting}
-								onProfileChange={updateProfile}
+								// TODO: Fix whatsapp integration after schema updates
+								// onProfileChange={updateProfile}
 							/>
 
 							{/* Notification Preferences */}

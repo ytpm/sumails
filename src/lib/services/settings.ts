@@ -26,7 +26,7 @@ export interface SettingsData {
 	profile: {
 		fullName: string | null
 		phoneNumber: string | null
-		whatsappNumber: string | null
+		personalContext: string | null
 	}
 }
 
@@ -75,7 +75,7 @@ class SettingsService {
 				profile: {
 					fullName: profile?.full_name ?? null,
 					phoneNumber: profile?.phone_number ?? null,
-					whatsappNumber: profile?.whatsapp_number ?? null,
+					personalContext: profile?.personal_context ?? null,
 				},
 			}
 		} catch (error) {
@@ -195,7 +195,7 @@ class SettingsService {
 				const profileUpdate: ProfileUpdate = {
 					full_name: settings.profile.fullName,
 					phone_number: settings.profile.phoneNumber,
-					whatsapp_number: settings.profile.whatsappNumber,
+					personal_context: settings.profile.personalContext,
 					updated_at: new Date().toISOString(),
 				}
 

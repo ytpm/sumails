@@ -210,13 +210,17 @@ Content: ${contentValue}`
  * Create the system prompt for OpenAI
  * 
  * @param dateProcessed - The date being processed
+ * @param userContext - The user's personal context (optional)
  * @returns System prompt string
+ * 
  */
-function createSystemPrompt(dateProcessed: string): string {
+function createSystemPrompt(dateProcessed: string, userContext?: string): string {
 	const isToday = dateProcessed === new Date().toISOString().split('T')[0]
 	const timeContext = isToday ? 'today' : `on ${dateProcessed}`
 	
 	return `You are an AI email assistant helping the user manage their Gmail inbox. You have access to emails ${timeContext}. Your job is to make sense of the inbox, surface what's important, and reduce the user's cognitive load.
+
+${userContext ? `User Context: ${userContext}` : ''}
 
 Perform the following:
 

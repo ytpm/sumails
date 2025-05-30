@@ -134,33 +134,30 @@ export type Database = {
           full_name: string | null
           id: string
           language_preference: string | null
-          notification_preferences: Json | null
+          personal_context: string | null
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
-          whatsapp_number: string | null
         }
         Insert: {
           avatar_url?: string | null
           full_name?: string | null
           id: string
           language_preference?: string | null
-          notification_preferences?: Json | null
+          personal_context?: string | null
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
-          whatsapp_number?: string | null
         }
         Update: {
           avatar_url?: string | null
           full_name?: string | null
           id?: string
           language_preference?: string | null
-          notification_preferences?: Json | null
+          personal_context?: string | null
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
-          whatsapp_number?: string | null
         }
         Relationships: []
       }

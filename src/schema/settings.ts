@@ -19,7 +19,7 @@ export const settingsSchema = z.object({
 	profile: z.object({
 		fullName: z.string().nullable(),
 		phoneNumber: z.string().nullable(),
-		whatsappNumber: z.string().nullable(),
+		personalContext: z.string().nullable(),
 	}),
 })
 
