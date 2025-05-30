@@ -235,7 +235,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
 							</div>
 							<div className="max-h-[250px] overflow-y-auto">
 								{filteredCountries.map((country) => (
-									<SelectItem key={country.code} value={country.code.split('-')[0]}>
+									<SelectItem key={`${country.code}-${country.name}`} value={country.code.split('-')[0]}>
 										<div className="flex items-center gap-2 min-w-0">
 											<span className="flex-shrink-0">{country.flag}</span>
 											<span className="font-medium w-10 flex-shrink-0">+{country.code.split('-')[0]}</span>

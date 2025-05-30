@@ -10,9 +10,9 @@ interface AccountInformationCardProps {
 	fullName?: string
 	phoneNumber?: string
 	personalContext?: string
-	onFullNameChange?: (value: string) => void
-	onPhoneNumberChange?: (value: string) => void
-	onPersonalContextChange?: (value: string) => void
+	onFullNameChange?: (value: string | null) => void
+	onPhoneNumberChange?: (value: string | null) => void
+	onPersonalContextChange?: (value: string | null) => void
 }
 
 export default function AccountInformationCard({ 
@@ -45,7 +45,8 @@ export default function AccountInformationCard({
 	// Use external handlers if provided, otherwise use internal state
 	const handleFullNameChange = (value: string) => {
 		if (onFullNameChange) {
-			onFullNameChange(value)
+			// Convert empty string to null to match database schema for proper change detection
+			onFullNameChange(value.trim() === '' ? null : value)
 		} else {
 			setInternalFullName(value)
 		}
@@ -53,7 +54,8 @@ export default function AccountInformationCard({
 
 	const handlePhoneNumberChange = (value: string) => {
 		if (onPhoneNumberChange) {
-			onPhoneNumberChange(value)
+			// Convert empty string to null to match database schema for proper change detection
+			onPhoneNumberChange(value.trim() === '' ? null : value)
 		} else {
 			setInternalPhoneNumber(value)
 		}
@@ -61,7 +63,8 @@ export default function AccountInformationCard({
 
 	const handlePersonalContextChange = (value: string) => {
 		if (onPersonalContextChange) {
-			onPersonalContextChange(value)
+			// Convert empty string to null to match database schema for proper change detection
+			onPersonalContextChange(value.trim() === '' ? null : value)
 		} else {
 			setInternalPersonalContext(value)
 		}
