@@ -1,10 +1,36 @@
-# Sumails - Intelligent Email Assistant
+# 📧 Sumails - Intelligent Email Assistant
 
-Sumails is a web application designed to help users manage their Gmail inboxes more effectively by providing AI-powered daily summaries, insights, and organizational tools. It connects securely to users' Gmail accounts and uses OpenAI's GPT models to analyze email content and generate concise, actionable summaries.
+![Next.js](https://img.shields.io/badge/Next.js-14+-black?style=for-the-badge&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript&logoColor=white)
+![AI](https://img.shields.io/badge/AI-OpenAI-green?style=for-the-badge&logo=openai&logoColor=white)
+![Gmail](https://img.shields.io/badge/Gmail-API-red?style=for-the-badge&logo=gmail&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-gray?style=for-the-badge&logo=supabase&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+![Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)
+
+**�� Demo Project 🚧**
+
+**🌐 Live Demo:** [www.sumails.com](https://www.sumails.com)
+
+Sumails is a demo web application that I've been working on to showcase modern web development practices and AI integration. It's designed to help users manage their Gmail inboxes more effectively by providing AI-powered daily summaries, insights, and organizational tools. The application connects securely to users' Gmail accounts and uses OpenAI's GPT models to analyze email content and generate concise, actionable summaries.
+
+**🎨 Design:** The UI/UX design was created using [bolt.new](https://bolt.new), an AI-powered web development platform.
+
+## 🔧 Fork, Use, and Learn
+
+This project is open source and available for anyone to:
+- **Fork and use** the entire project as a starting point for your own email management tool
+- **Extract specific components** or features that you find useful for your projects
+- **Learn from the implementation** of Gmail API integration, AI-powered content analysis, and modern React/Next.js patterns
+- **Contribute improvements** or suggest new features
+
+Feel free to take any part of this codebase that serves your needs. The project demonstrates various concepts including OAuth integration, AI-powered content processing, subscription management, and modern React patterns.
 
 ## Table of Contents
 
-- [Sumails - Intelligent Email Assistant](#sumails---intelligent-email-assistant)
+- [📧 Sumails - Intelligent Email Assistant](#-sumails---intelligent-email-assistant)
+  - [🔧 Fork, Use, and Learn](#-fork-use-and-learn)
   - [Table of Contents](#table-of-contents)
   - [Key Features](#key-features)
   - [Tech Stack](#tech-stack)
@@ -32,26 +58,29 @@ Sumails is a web application designed to help users manage their Gmail inboxes m
     - [Cron Jobs:](#cron-jobs-1)
   - [Contributing](#contributing)
   - [License](#license)
+  - [⚠️ TODO - Incomplete Features](#️-todo---incomplete-features)
+    - [🚫 Not Implemented:](#-not-implemented)
+    - [✅ What Works:](#-what-works)
 
 ## Key Features
 
-* **Secure User Authentication**: Email/password sign-up and login, password reset, and secure session management via Supabase Auth.
-* **Gmail Integration**: Securely connect multiple Gmail accounts using OAuth 2.0. Access tokens are refreshed automatically.
-* **AI-Powered Daily Summaries**: Leverages OpenAI (e.g., GPT-4o) to generate daily email summaries including:
+* 🔐 **Secure User Authentication**: Email/password sign-up and login, password reset, and secure session management via Supabase Auth.
+* 🔗 **Gmail Integration**: Securely connect multiple Gmail accounts using OAuth 2.0. Access tokens are refreshed automatically.
+* 🤖 **AI-Powered Daily Summaries**: Leverages OpenAI (e.g., GPT-4o) to generate daily email summaries including:
     * An overview of inbox activity.
     * Actionable insights.
     * A list of important emails with reasons for their importance.
     * An overall inbox health status (`attention_needed`, `worth_a_look`, `all_clear`).
     * Suggestions for inbox cleanup.
-* **Multiple Account Support**: Different subscription tiers allow users to connect one or more Gmail accounts.
-* **Summary History**: Users can view past summaries for their connected accounts.
-* **Configurable Summary Preferences**: Users can set their preferred time, timezone, and summary tone (friendly, professional, concise).
-* **Notification System**: Delivers summaries via Email and WhatsApp (currently console-logged placeholders, requires integration with actual sending services). Notifications are triggered based on summary status.
-* **Subscription Tiers**: Free, Pro, and Business plans with varying features and limits (Stripe integration is placeholder).
-* **User Settings Management**: Comprehensive settings page for profile information, notification preferences, and summary delivery options.
-* **Automated Daily Summaries**: Cron jobs ensure summaries are generated automatically at user-specified times.
-* **Token Management**: Automatic refresh of expired Google OAuth tokens.
-* **Responsive Design**: UI built with Tailwind CSS and shadcn/ui for a modern, responsive experience.
+* 📬 **Multiple Account Support**: Different subscription tiers allow users to connect one or more Gmail accounts.
+* 📊 **Summary History**: Users can view past summaries for their connected accounts.
+* ⚙️ **Configurable Summary Preferences**: Users can set their preferred time, timezone, and summary tone (friendly, professional, concise).
+* 🔔 **Notification System**: Delivers summaries via Email and WhatsApp (currently console-logged placeholders, requires integration with actual sending services). Notifications are triggered based on summary status.
+* 💳 **Subscription Tiers**: Free, Pro, and Business plans with varying features and limits (Stripe integration is placeholder).
+* 🛠️ **User Settings Management**: Comprehensive settings page for profile information, notification preferences, and summary delivery options.
+* ⏰ **Automated Daily Summaries**: Cron jobs ensure summaries are generated automatically at user-specified times.
+* 🔄 **Token Management**: Automatic refresh of expired Google OAuth tokens.
+* 📱 **Responsive Design**: UI built with Tailwind CSS and shadcn/ui for a modern, responsive experience.
 
 ## Tech Stack
 
@@ -72,6 +101,7 @@ Sumails is a web application designed to help users manage their Gmail inboxes m
 
 The project follows a standard Next.js App Router structure:
 
+```
 ├── next-env.d.ts
 ├── tailwind.config.ts
 ├── next.config.ts
@@ -111,6 +141,7 @@ The project follows a standard Next.js App Router structure:
 │   └── utils/                      # Utility functions and Supabase client setup
 ├── public/                         # Static assets
 └── README.md
+```
 
 ## Getting Started
 
@@ -318,8 +349,51 @@ Contributions are welcome! Please follow these general guidelines:
 
 ## License
 
-(Specify your license here, e.g., MIT, Apache 2.0. If no license is chosen, it's proprietary.)
+MIT License
+
+Copyright (c) 2024
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
 This README provides a good starting point. You can expand on sections like "Supabase Setup," "Deployment," or add a "Troubleshooting" section as the project evolves.
+
+## ⚠️ TODO - Incomplete Features
+
+While this demo showcases many modern web development patterns and AI integration concepts, there are several features that are not fully implemented:
+
+### 🚫 Not Implemented:
+- **Stripe Integration**: Payment processing and subscription management are placeholder implementations. However, I have prepared comprehensive documentation for Stripe integration in the `documentation/STRIPE_INTEGRATION_GUIDE.md` file, which provides a complete step-by-step guide for implementing Stripe payments and subscriptions.
+
+- **Subscription Management**: While the UI and data structures exist for Free, Pro, and Business plans, the actual subscription logic and payment enforcement are not active.
+
+- **Notification System**: The system for sending summary notifications to users (Email and WhatsApp) is currently implemented as console logs only. The infrastructure is in place, but actual message delivery is not implemented.
+
+- **Email/WhatsApp Delivery**: While the Twilio integration is set up for WhatsApp notifications, actual sending of emails and WhatsApp messages to users is not implemented.
+
+### ✅ What Works:
+- Gmail OAuth integration and email fetching
+- AI-powered email analysis and summary generation
+- User authentication and account management
+- Responsive UI with modern design patterns
+- Database schema and API endpoints
+- Webhook infrastructure (ready for Stripe)
+
+These incomplete features represent excellent opportunities for learning and extending the project, and the codebase provides a solid foundation for implementing them.
