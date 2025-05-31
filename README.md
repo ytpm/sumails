@@ -9,13 +9,40 @@
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 ![Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)
 
-**�� Demo Project 🚧**
+**🚧 Demo Project 🚧**
 
 **🌐 Live Demo:** [www.sumails.com](https://www.sumails.com)
 
 Sumails is a demo web application that I've been working on to showcase modern web development practices and AI integration. It's designed to help users manage their Gmail inboxes more effectively by providing AI-powered daily summaries, insights, and organizational tools. The application connects securely to users' Gmail accounts and uses OpenAI's GPT models to analyze email content and generate concise, actionable summaries.
 
 **🎨 Design:** The UI/UX design was created using [bolt.new](https://bolt.new), an AI-powered web development platform. UI components are built with [shadcn/ui](https://ui.shadcn.com/), a modern component library built on top of Radix UI and Tailwind CSS.
+
+## ⭐ Show Your Support
+
+**Enjoyed this project?** If you found the code useful, learned something new, or used parts of it in your own projects, please consider giving it a ⭐ **star**! Your support helps others discover this resource and motivates continued development.
+
+[![Star this repo](https://img.shields.io/github/stars/ytpm/sumails?style=social)](https://github.com/ytpm/sumails/stargazers)
+
+## 📸 Screenshots
+
+### Homepage
+![Homepage](https://raw.githubusercontent.com/ytpm/sumails/refs/heads/main/public/screenshots/sumails_01.png)
+*Clean, modern landing page showcasing the AI-powered email assistant*
+
+### User Settings Dashboard
+![User Settings](https://raw.githubusercontent.com/ytpm/sumails/refs/heads/main/public/screenshots/sumails_02.png)
+*Comprehensive settings panel for managing preferences, notifications, and account details*
+
+### Connected Accounts & Mailboxes
+![Mailboxes Dashboard](https://raw.githubusercontent.com/ytpm/sumails/refs/heads/main/public/screenshots/sumails_03.png)
+*Dashboard for managing multiple Gmail account connections and monitoring sync status*
+
+### Email Summaries Dialog
+![Email Summaries](https://raw.githubusercontent.com/ytpm/sumails/refs/heads/main/public/screenshots/sumails_04.png)
+*AI-generated email summaries with actionable insights and inbox health status*
+
+![Email Summaries Detail](https://raw.githubusercontent.com/ytpm/sumails/refs/heads/main/public/screenshots/sumails_05.png)
+*Detailed view of email summaries showing important emails and cleanup suggestions*
 
 ## 🔧 Fork, Use, and Learn
 
@@ -30,6 +57,12 @@ Feel free to take any part of this codebase that serves your needs. The project 
 ## Table of Contents
 
 - [📧 Sumails - Intelligent Email Assistant](#-sumails---intelligent-email-assistant)
+  - [⭐ Show Your Support](#-show-your-support)
+  - [📸 Screenshots](#-screenshots)
+    - [Homepage](#homepage)
+    - [User Settings Dashboard](#user-settings-dashboard)
+    - [Connected Accounts \& Mailboxes](#connected-accounts--mailboxes)
+    - [Email Summaries Dialog](#email-summaries-dialog)
   - [🔧 Fork, Use, and Learn](#-fork-use-and-learn)
   - [Table of Contents](#table-of-contents)
   - [Key Features](#key-features)
