@@ -15,7 +15,7 @@
 
 Sumails is a demo web application that I've been working on to showcase modern web development practices and AI integration. It's designed to help users manage their Gmail inboxes more effectively by providing AI-powered daily summaries, insights, and organizational tools. The application connects securely to users' Gmail accounts and uses OpenAI's GPT models to analyze email content and generate concise, actionable summaries.
 
-**🎨 Design:** The UI/UX design was created using [bolt.new](https://bolt.new), an AI-powered web development platform.
+**🎨 Design:** The UI/UX design was created using [bolt.new](https://bolt.new), an AI-powered web development platform. UI components are built with [shadcn/ui](https://ui.shadcn.com/), a modern component library built on top of Radix UI and Tailwind CSS.
 
 ## 🔧 Fork, Use, and Learn
 
@@ -222,6 +222,12 @@ yarn dev
 pnpm dev
 ```
 
+**Note:** The `npm run dev` script is configured to run both the Next.js development server and the Stripe CLI listen command concurrently. This allows you to:
+- Start the Next.js app at `http://localhost:3000`
+- Listen for Stripe webhook events for local testing
+
+If you want to run only the Next.js server or modify this behavior, you can update the `dev` script in your `package.json` file. The current setup assumes you have the Stripe CLI installed and configured for webhook testing during development.
+
 The application will be available at `http://localhost:3000` (or the `NEXT_PUBLIC_SITE_URL`).
 
 ### Building for Production
@@ -295,6 +301,14 @@ Located at `/account/settings` and managed by `src/hooks/use-settings.ts` and `s
 ### Cron Jobs
 
 API routes designed to be triggered by external cron services (e.g., Vercel Cron Jobs, GitHub Actions Scheduler).
+
+**⏰ Scheduled Times:** The project is configured with 4 automatic cron jobs that run daily at different times (see `vercel.json`):
+- **07:00 UTC** - Morning summaries
+- **09:00 UTC** - Late morning summaries  
+- **12:00 UTC** - Midday summaries
+- **18:00 UTC** - Evening summaries
+
+This ensures users receive their daily email summaries at their preferred times across different timezones.
 
 * **`GET /api/cron/daily-summaries?time=HH:MM:`**
   * Protected by `CRON_SECRET`.
